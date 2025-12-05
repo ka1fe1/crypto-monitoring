@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	_ "github.com/ka1fe1/crypto-monitoring/docs"
 	"github.com/ka1fe1/crypto-monitoring/internal/api/handlers"
 	"github.com/ka1fe1/crypto-monitoring/internal/api/routers"
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
@@ -26,7 +27,6 @@ import (
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:8080
 // @BasePath  /
 
 // @securityDefinitions.basic  BasicAuth

@@ -48,3 +48,38 @@ make run
 
 ### 访问
 *   Swagger UI: [http://localhost:8080/swagger/index.html](http://localhost:8080/swagger/index.html)
+
+### Docker 运行
+
+#### 1. 构建镜像
+```bash
+docker build -t crypto-monitoring-server .
+```
+
+#### 2. 运行容器 (挂载配置文件)
+使用 `-v` 参数将本地的 `config.yaml` 挂载到容器内的 `/app/config/config.yaml`。
+
+```bash
+docker run -d \
+  --name crypto-monitoring \
+  -v $(pwd)/config/config.yaml:/app/config/config.yaml \
+  -p 8080:8080 \
+  crypto-monitoring-server
+```
+
+#### 3. 常用命令
+
+*   **查看日志**
+    ```bash
+    docker logs -f crypto-monitoring
+    ```
+
+*   **重启容器**
+    ```bash
+    docker restart crypto-monitoring
+    ```
+
+*   **停止容器**
+    ```bash
+    docker stop crypto-monitoring
+    ```

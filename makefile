@@ -14,6 +14,7 @@ fmt: sync-config
 deps:
 	go mod download
 	go mod tidy
+	go mod vendor
 
 build: deps swagger
 	mkdir -p bin
