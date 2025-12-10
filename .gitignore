@@ -32,5 +32,3 @@ bin/
 
 # config
 config/config.yaml
-
-crypto-monitoring.code-workspace

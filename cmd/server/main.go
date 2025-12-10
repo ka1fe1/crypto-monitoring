@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	"context"
+
 	"github.com/ka1fe1/crypto-monitoring/config"
 	_ "github.com/ka1fe1/crypto-monitoring/docs"
 	"github.com/ka1fe1/crypto-monitoring/internal/api/handlers"
@@ -56,6 +58,10 @@ func main() {
 
 	// Initialize DingTalk Bot
 	dingBot := dingding.NewDingBot(cfg.DingTalk.AccessToken, cfg.DingTalk.Secret, cfg.DingTalk.Keyword)
+
+	// Initialize Binance Service
+	binanceAnnouncementService := service.NewBinanceAnnouncementService(cfg.BinanceCex.APIKey, cfg.BinanceCex.SecretKey, cfg.BinanceCex.ProxyURL, dingBot)
+	go binanceAnnouncementService.Start(context.Background())
 
 	// Initialize Tasks
 	priceAlertTask := tasks.NewDexPairAlterTask(dexService, dingBot, cfg.DexPairAlter.ContractAddress, cfg.DexPairAlter.NetworkSlug, cfg.DexPairAlter.IntervalSeconds)

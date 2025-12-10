@@ -12,6 +12,7 @@ type Config struct {
 	CoinMarketCap CoinMarketCapConfig `yaml:"coinmarketcap"`
 	DingTalk      DingTalkConfig      `yaml:"dingtalk"`
 	DexPairAlter  DexPairAlterConfig  `yaml:"dex_pair_alter"`
+	BinanceCex    BinanceCexConfig    `yaml:"binance-cex"`
 }
 
 type ServerConfig struct {
@@ -32,6 +33,12 @@ type DexPairAlterConfig struct {
 	ContractAddress string `yaml:"contract_address"`
 	NetworkSlug     string `yaml:"network_slug"`
 	IntervalSeconds int    `yaml:"interval_seconds"`
+}
+
+type BinanceCexConfig struct {
+	APIKey    string `yaml:"api_key"`
+	SecretKey string `yaml:"secret_key"`
+	ProxyURL  string `yaml:"proxy_url"`
 }
 
 func LoadConfig(path string) (*Config, error) {

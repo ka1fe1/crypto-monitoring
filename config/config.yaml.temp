@@ -9,3 +9,7 @@ dingtalk:
 dex_pair_alter:
     contract_address: "2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix"
     network_slug: "solana"
+    interval_seconds: 60
+binance-cex:
+    api_key: "YOUR_API_KEY_HERE"
+    secret_key: "IRR9KNb9OG4YRwzUUaefmb5ej0XD7CLjaNlv5lzd5tvLKrBlENy6bRNfyI10oF8B"
