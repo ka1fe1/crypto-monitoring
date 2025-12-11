@@ -53,7 +53,7 @@ make run
 
 #### 1. 构建镜像
 ```bash
-docker build -t crypto-monitoring-server .
+docker build -t crypto-monitoring .
 ```
 
 #### 2. 运行容器 (挂载配置文件)
@@ -62,9 +62,9 @@ docker build -t crypto-monitoring-server .
 ```bash
 docker run -d \
   --name crypto-monitoring \
-  -v $(pwd)/config/config.yaml:/app/config/config.yaml \
+  -v $(pwd)/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -p 8080:8080 \
-  crypto-monitoring-server
+  crypto-monitoring
 ```
 
 #### 3. 常用命令
