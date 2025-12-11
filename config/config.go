@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"strings"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,9 +32,10 @@ type DingTalkConfig struct {
 }
 
 type DexPairAlterConfig struct {
-	ContractAddress string `yaml:"contract_address"`
-	NetworkSlug     string `yaml:"network_slug"`
-	IntervalSeconds int    `yaml:"interval_seconds"`
+	ContractAddrs   []string `yaml:"contract_addrs"`
+	IntervalSeconds int      `yaml:"interval_seconds"`
+	// key: networkId, value: contractAddrs
+	ContractAddrInfo map[string][]string
 }
 
 type BinanceCexConfig struct {
@@ -54,5 +57,20 @@ func LoadConfig(path string) (*Config, error) {
 		return nil, fmt.Errorf("failed to decode config file: %w", err)
 	}
 
+	// Parse ContractAddrInfo
+	cfg.DexPairAlter.ContractAddrInfo = make(map[string][]string)
+	for _, entry := range cfg.DexPairAlter.ContractAddrs {
+		parts := strings.Split(entry, ":")
+		if len(parts) == 2 {
+			networkId := strings.TrimSpace(parts[0])
+			addrsStr := parts[1]
+			addrs := strings.Split(addrsStr, ",")
+			var trimmedAddrs []string
+			for _, addr := range addrs {
+				trimmedAddrs = append(trimmedAddrs, strings.TrimSpace(addr))
+			}
+			cfg.DexPairAlter.ContractAddrInfo[networkId] = trimmedAddrs
+		}
+	}
 	return &cfg, nil
 }

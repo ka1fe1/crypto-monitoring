@@ -26,7 +26,7 @@ const docTemplate = `{
     "paths": {
         "/api/v1/dex/pair": {
             "get": {
-                "description": "Get information about a DEX pair",
+                "description": "Get information about DEX pairs (supports comma-separated addresses)",
                 "consumes": [
                     "application/json"
                 ],
@@ -40,7 +40,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Contract Address",
+                        "description": "Contract Addresses (comma-separated)",
                         "name": "contract_address",
                         "in": "query",
                         "required": true
@@ -49,15 +49,23 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Network Slug",
                         "name": "network_slug",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Network ID",
+                        "name": "network_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.DexPairInfo"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.DexPairInfo"
+                            }
                         }
                     },
                     "400": {
@@ -168,16 +176,19 @@ const docTemplate = `{
                 "dex_slug": {
                     "type": "string"
                 },
+                "last_updated": {
+                    "type": "string"
+                },
                 "liquidity": {
                     "type": "number"
                 },
                 "name": {
                     "type": "string"
                 },
-                "percent_change_price_1h": {
-                    "type": "number"
+                "network_slug": {
+                    "type": "string"
                 },
-                "percent_change_price_24h": {
+                "percent_change_price_1h": {
                     "type": "number"
                 },
                 "price": {

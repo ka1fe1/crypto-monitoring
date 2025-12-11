@@ -122,6 +122,7 @@ type DexPair struct {
 	QuoteAssetSymbol          string         `json:"quote_asset_symbol"`
 	QuoteAssetContractAddress string         `json:"quote_asset_contract_address"`
 	DexSlug                   string         `json:"dex_slug"`
+	NetworkSlug               string         `json:"network_slug"`
 	Quote                     []DexPairQuote `json:"quote"`
 }
 
@@ -132,10 +133,11 @@ type DexPairQuote struct {
 	PercentChange1h  float64 `json:"percent_change_1h"`
 	PercentChange24h float64 `json:"percent_change_24h"`
 	Liquidity        float64 `json:"liquidity"`
+	LastUpdated      string  `json:"last_updated"`
 }
 
 // GetDexPairQuotes fetches the quotes for DEX pairs using the /v4/dex/pairs/quotes/latest endpoint.
-func (c *CoinMarketClient) GetDexPairQuotes(contractAddresses []string, networkSlug string) (map[string]DexPair, error) {
+func (c *CoinMarketClient) GetDexPairQuotes(contractAddresses []string, networkSlug, networkId string) (map[string]DexPair, error) {
 	// Note: The BaseURL constant points to v2, but this endpoint is v4.
 	// We need to construct the URL carefully.
 	// BaseURL is "https://pro-api.coinmarketcap.com/v2"
@@ -151,7 +153,11 @@ func (c *CoinMarketClient) GetDexPairQuotes(contractAddresses []string, networkS
 
 	q := u.Query()
 	q.Set("contract_address", strings.Join(contractAddresses, ","))
-	q.Set("network_slug", networkSlug)
+	if networkId != "" {
+		q.Set("network_id", networkId)
+	} else if networkSlug != "" {
+		q.Set("network_slug", networkSlug)
+	}
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)

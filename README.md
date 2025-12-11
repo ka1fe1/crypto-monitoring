@@ -69,6 +69,21 @@ docker run -d \
 
 #### 3. 常用命令
 
+*   **tag**
+    ```bash
+    docker tag crypto-monitoring:25121001 tataka1takes2/crypto-monitoring:25121001
+    ```
+
+*   **推送**
+    ```bash
+    docker push tataka1takes2/crypto-monitoring:25121001
+    ```
+
+*   **拉取**
+    ```bash
+    docker pull tataka1takes2/crypto-monitoring:25121001
+    ```
+
 *   **查看日志**
     ```bash
     docker logs -f crypto-monitoring

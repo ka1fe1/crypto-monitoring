@@ -86,10 +86,10 @@ func TestGetDexPairQuotes(t *testing.T) {
 
 	// Example: WETH/USDC pair on Ethereum
 	// Contract Address: 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640 (Uniswap V3)
-	contractAddress := "2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix"
-	networkSlug := "solana"
+	contractAddress := "0xb67e5eaf770a384ab28029d08b9bc5ebe32beb0f"
+	networkId := BNB_NETWORK_ID
 
-	pairs, err := client.GetDexPairQuotes([]string{contractAddress}, networkSlug)
+	pairs, err := client.GetDexPairQuotes([]string{contractAddress}, "", networkId)
 	if err != nil {
 		t.Fatalf("GetDexPairQuotes failed: %v", err)
 	}
@@ -104,8 +104,9 @@ func TestGetDexPairQuotes(t *testing.T) {
 	t.Logf("Quote Token: %s (%s)", pair.QuoteAssetSymbol, pair.QuoteAssetContractAddress)
 
 	if len(pair.Quote) > 0 {
-		t.Logf("Price: %f", pair.Quote[0].Price)
+		t.Logf("info: %s", PrintJson(pair))
 	} else {
 		t.Log("No quote data available")
 	}
+
 }

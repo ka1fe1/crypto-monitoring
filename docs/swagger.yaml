@@ -4,13 +4,15 @@ definitions:
     properties:
       dex_slug:
         type: string
+      last_updated:
+        type: string
       liquidity:
         type: number
       name:
         type: string
+      network_slug:
+        type: string
       percent_change_price_1h:
-        type: number
-      percent_change_price_24h:
         type: number
       price:
         type: number
@@ -42,9 +44,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get information about a DEX pair
+      description: Get information about DEX pairs (supports comma-separated addresses)
       parameters:
-      - description: Contract Address
+      - description: Contract Addresses (comma-separated)
         in: query
         name: contract_address
         required: true
@@ -52,7 +54,10 @@ paths:
       - description: Network Slug
         in: query
         name: network_slug
-        required: true
+        type: string
+      - description: Network ID
+        in: query
+        name: network_id
         type: string
       produces:
       - application/json
@@ -60,7 +65,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.DexPairInfo'
+            items:
+              $ref: '#/definitions/service.DexPairInfo'
+            type: array
         "400":
           description: Bad Request
           schema:

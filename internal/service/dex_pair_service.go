@@ -2,21 +2,23 @@ package service
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 )
 
 type DexPairInfo struct {
-	Name             string  `json:"name"`
-	Price            float64 `json:"price"`
-	PercentChange1h  float64 `json:"percent_change_price_1h"`
-	PercentChange24h float64 `json:"percent_change_price_24h"`
-	DexSlug          string  `json:"dex_slug"`
-	Liquidity        float64 `json:"liquidity"`
+	Name            string  `json:"name"`
+	Price           float64 `json:"price"`
+	PercentChange1h float64 `json:"percent_change_price_1h"`
+	DexSlug         string  `json:"dex_slug"`
+	NetworkSlug     string  `json:"network_slug"`
+	Liquidity       float64 `json:"liquidity"`
+	LastUpdated     string  `json:"last_updated"`
 }
 
 type DexPairService interface {
-	GetDexPairInfo(contractAddress, networkSlug string) (*DexPairInfo, error)
+	GetDexPairInfo(contractAddresses []string, networkSlug, networkId string) ([]*DexPairInfo, error)
 }
 
 type dexPairService struct {
@@ -29,29 +31,43 @@ func NewDexPairService(client *utils.CoinMarketClient) DexPairService {
 	}
 }
 
-func (s *dexPairService) GetDexPairInfo(contractAddress, networkSlug string) (*DexPairInfo, error) {
-	pairs, err := s.client.GetDexPairQuotes([]string{contractAddress}, networkSlug)
+func (s *dexPairService) GetDexPairInfo(contractAddresses []string, networkSlug, networkId string) ([]*DexPairInfo, error) {
+	pairs, err := s.client.GetDexPairQuotes(contractAddresses, networkSlug, networkId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch dex pair quotes: %w", err)
 	}
 
-	pair, ok := pairs[contractAddress]
-	if !ok {
-		return nil, fmt.Errorf("pair not found for contract address: %s", contractAddress)
+	var results []*DexPairInfo
+	for _, address := range contractAddresses {
+		pair, ok := pairs[address]
+		if !ok {
+			// If not found in map, it might happen if API didn't return it.
+			continue
+		}
+
+		info := &DexPairInfo{
+			Name:        pair.Name,
+			DexSlug:     pair.DexSlug,
+			NetworkSlug: pair.NetworkSlug,
+		}
+
+		if len(pair.Quote) > 0 {
+			quote := pair.Quote[0]
+			info.Price = quote.Price
+			info.PercentChange1h = quote.PercentChange1h
+			info.Liquidity = quote.Liquidity
+
+			// Format LastUpdated
+			parsedTime, err := time.Parse(time.RFC3339, quote.LastUpdated)
+			if err == nil {
+				loc := time.FixedZone("UTC+8", 8*60*60)
+				info.LastUpdated = parsedTime.In(loc).Format("2006-01-02 15:04:05")
+			} else {
+				info.LastUpdated = quote.LastUpdated
+			}
+		}
+		results = append(results, info)
 	}
 
-	info := &DexPairInfo{
-		Name:    pair.Name,
-		DexSlug: pair.DexSlug,
-	}
-
-	if len(pair.Quote) > 0 {
-		quote := pair.Quote[0]
-		info.Price = quote.Price
-		info.PercentChange1h = quote.PercentChange1h
-		info.PercentChange24h = quote.PercentChange24h
-		info.Liquidity = quote.Liquidity
-	}
-
-	return info, nil
+	return results, nil
 }

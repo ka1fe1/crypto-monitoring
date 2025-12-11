@@ -62,7 +62,7 @@ func main() {
 	// go binanceAnnouncementService.Start(context.Background())
 
 	// Initialize Tasks
-	priceAlertTask := tasks.NewDexPairAlterTask(dexService, dingBot, cfg.DexPairAlter.ContractAddress, cfg.DexPairAlter.NetworkSlug, cfg.DexPairAlter.IntervalSeconds)
+	priceAlertTask := tasks.NewDexPairAlterTask(dexService, dingBot, cfg.DexPairAlter.ContractAddrInfo, cfg.DexPairAlter.IntervalSeconds)
 	priceAlertTask.Start()
 
 	// SetupRouter

@@ -3,6 +3,7 @@ package tasks
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
@@ -10,27 +11,25 @@ import (
 )
 
 type DexPairAlterTask struct {
-	dexService      service.DexPairService
-	dingBot         *dingding.DingBot
-	ticker          *time.Ticker
-	stop            chan bool
-	contractAddress string
-	networkSlug     string
-	interval        time.Duration
+	dexService       service.DexPairService
+	dingBot          *dingding.DingBot
+	ticker           *time.Ticker
+	stop             chan bool
+	contractAddrInfo map[string][]string
+	interval         time.Duration
 }
 
-func NewDexPairAlterTask(dexService service.DexPairService, dingBot *dingding.DingBot, contractAddress, networkSlug string, intervalSeconds int) *DexPairAlterTask {
+func NewDexPairAlterTask(dexService service.DexPairService, dingBot *dingding.DingBot, contractAddrInfo map[string][]string, intervalSeconds int) *DexPairAlterTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 60 * time.Second
 	}
 	return &DexPairAlterTask{
-		dexService:      dexService,
-		dingBot:         dingBot,
-		stop:            make(chan bool),
-		contractAddress: contractAddress,
-		networkSlug:     networkSlug,
-		interval:        interval,
+		dexService:       dexService,
+		dingBot:          dingBot,
+		stop:             make(chan bool),
+		contractAddrInfo: contractAddrInfo,
+		interval:         interval,
 	}
 }
 
@@ -54,26 +53,56 @@ func (t *DexPairAlterTask) Stop() {
 }
 
 func (t *DexPairAlterTask) run() {
-	info, err := t.dexService.GetDexPairInfo(t.contractAddress, t.networkSlug)
-	if err != nil {
-		log.Printf("Error fetching dex pair info: %v", err)
+	var allTexts []string
+	var allTitles []string
+
+	for networkId, addrs := range t.contractAddrInfo {
+		if len(addrs) == 0 {
+			continue
+		}
+
+		infos, err := t.dexService.GetDexPairInfo(addrs, "", networkId)
+		if err != nil {
+			log.Printf("Error fetching dex pair info for network %s: %v", networkId, err)
+			continue
+		}
+
+		for _, info := range infos {
+			if info == nil {
+				continue
+			}
+			title := fmt.Sprintf("Price Alert: %s", info.Name)
+			text := fmt.Sprintf("### %s Price Alert\n\n"+
+				"- **Price**: $%.6f\n"+
+				"- **Liquidity**: $%s\n"+
+				"- **1h Change**: %.8f%%\n"+
+				"- **DEX & Network**: %s\n"+
+				"- **Last Updated**: %s\n",
+				info.Name, info.Price, formatLiquidity(info.Liquidity), info.PercentChange1h,
+				fmt.Sprintf("%s & %s", info.DexSlug, info.NetworkSlug), info.LastUpdated)
+
+			allTitles = append(allTitles, title)
+			allTexts = append(allTexts, text)
+		}
+	}
+
+	if len(allTexts) == 0 {
 		return
 	}
 
-	title := fmt.Sprintf("Price Alert: %s", info.Name)
-	text := fmt.Sprintf("### %s Price Alert\n\n"+
-		"- **Price**: $%.6f\n"+
-		"- **1h Change**: %.4f%%\n"+
-		"- **24h Change**: %.4f%%\n"+
-		"- **Liquidity**: $%s\n"+
-		"- **DEX**: %s\n",
-		info.Name, info.Price, info.PercentChange1h, info.PercentChange24h, formatLiquidity(info.Liquidity), info.DexSlug)
+	// Aggregate messages
+	unifiedTitle := "Batch Price Alerts"
+	if len(allTitles) > 0 {
+		unifiedTitle = allTitles[0] + "..." // Simple summary title
+	}
 
-	err = t.dingBot.SendMarkdown(title, text, nil, false)
+	unifiedText := strings.Join(allTexts, "\n---\n")
+
+	err := t.dingBot.SendMarkdown(unifiedTitle, unifiedText, nil, false)
 	if err != nil {
 		log.Printf("Error sending dingtalk message: %v", err)
 	} else {
-		log.Printf("Sent price alert for %s", info.Name)
+		log.Printf("Sent batch price alerts for %d pairs", len(allTexts))
 	}
 }
 
