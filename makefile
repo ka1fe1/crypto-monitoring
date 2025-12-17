@@ -17,6 +17,7 @@ deps:
 	go mod vendor
 
 build: deps swagger
+	rm -rf bin
 	mkdir -p bin
 	go build -o bin/$(BINARY_NAME) $(MAIN_PATH)
 

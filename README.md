@@ -71,24 +71,27 @@ docker run -d \
 
 *   **tag**
     ```bash
-    docker tag crypto-monitoring:25121001 tataka1takes2/crypto-monitoring:25121001
+    docker tag crypto-monitoring:25121102 tataka1takes2/crypto-monitoring:25121102
     ```
 
 *   **推送**
     ```bash
-    docker push tataka1takes2/crypto-monitoring:25121001
+    docker push tataka1takes2/crypto-monitoring:25121102
     ```
 
 *   **拉取**
     ```bash
-    docker pull tataka1takes2/crypto-monitoring:25121001
+    docker pull tataka1takes2/crypto-monitoring:25121102
     ```
 
-*   **查看日志**
+*   **删除容器**
     ```bash
-    docker logs -f crypto-monitoring
+    docker container rm crypto-monitoring
     ```
-
+*   **删除镜像**
+    ```bash
+    docker image rm crypto-monitoring
+    ```
 *   **重启容器**
     ```bash
     docker restart crypto-monitoring
@@ -98,3 +101,13 @@ docker run -d \
     ```bash
     docker stop crypto-monitoring
     ```
+*   **查看日志**
+    ```bash
+    docker logs -f crypto-monitoring
+    ```
+
+
+
+帮我写一个监控 token 价格的定时任务，使用 tokenService 获取价格的方法，可一次性获取多个币种的价格，并将结果一次性使用 dingding bot 推送到群里
+
+

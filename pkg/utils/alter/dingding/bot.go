@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -135,9 +136,11 @@ func (bot *DingBot) SendText(content string, atMobiles []string, isAtAll bool) e
 
 func (bot *DingBot) SendMarkdown(title, text string, atMobiles []string, isAtAll bool) error {
 	if bot.Keyword != "" {
-		title = fmt.Sprintf("[%s] %s", bot.Keyword, title)
-		text = fmt.Sprintf("[%s]\n%s", bot.Keyword, text)
+		if !strings.Contains(text, bot.Keyword) {
+			text = fmt.Sprintf("[%s]\n%s", bot.Keyword, text)
+		}
 	}
+
 	msg := MarkdownMessage{
 		MsgType: "markdown",
 		At: At{

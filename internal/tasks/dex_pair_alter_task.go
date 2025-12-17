@@ -54,7 +54,6 @@ func (t *DexPairAlterTask) Stop() {
 
 func (t *DexPairAlterTask) run() {
 	var allTexts []string
-	var allTitles []string
 
 	for networkId, addrs := range t.contractAddrInfo {
 		if len(addrs) == 0 {
@@ -71,7 +70,6 @@ func (t *DexPairAlterTask) run() {
 			if info == nil {
 				continue
 			}
-			title := fmt.Sprintf("Price Alert: %s", info.Name)
 			text := fmt.Sprintf("### %s Price Alert\n\n"+
 				"- **Price**: $%.6f\n"+
 				"- **Liquidity**: $%s\n"+
@@ -81,7 +79,6 @@ func (t *DexPairAlterTask) run() {
 				info.Name, info.Price, formatLiquidity(info.Liquidity), info.PercentChange1h,
 				fmt.Sprintf("%s & %s", info.DexSlug, info.NetworkSlug), info.LastUpdated)
 
-			allTitles = append(allTitles, title)
 			allTexts = append(allTexts, text)
 		}
 	}
@@ -91,12 +88,9 @@ func (t *DexPairAlterTask) run() {
 	}
 
 	// Aggregate messages
-	unifiedTitle := "Batch Price Alerts"
-	if len(allTitles) > 0 {
-		unifiedTitle = allTitles[0] + "..." // Simple summary title
-	}
+	unifiedTitle := fmt.Sprintf("%s Price Alerts", t.dingBot.Keyword)
 
-	unifiedText := strings.Join(allTexts, "\n---\n")
+	unifiedText := fmt.Sprintf("#### %s\n\n%s", unifiedTitle, strings.Join(allTexts, "\n---\n"))
 
 	err := t.dingBot.SendMarkdown(unifiedTitle, unifiedText, nil, false)
 	if err != nil {

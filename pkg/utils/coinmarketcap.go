@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 const BaseURL = "https://pro-api.coinmarketcap.com/v2"
@@ -41,12 +42,18 @@ type Crypto struct {
 }
 
 type Quote struct {
-	Price float64 `json:"price"`
+	Price            float64 `json:"price"`
+	PercentChange1h  float64 `json:"percent_change_1h"`
+	PercentChange24h float64 `json:"percent_change_24h"`
+	LastUpdated      string  `json:"last_updated"`
 }
 
 type TokenInfo struct {
-	Price  float64 `json:"price"`
-	Symbol string  `json:"symbol"`
+	Price            float64
+	Symbol           string
+	PercentChange1h  float64
+	PercentChange24h float64
+	LastUpdated      time.Time
 }
 
 // GetPrice fetches the prices of multiple cryptocurrency IDs in USD.
@@ -95,9 +102,14 @@ func (c *CoinMarketClient) GetPrice(ids []string) (map[string]TokenInfo, error) 
 
 	result := make(map[string]TokenInfo)
 	for id, crypto := range quoteResp.Data {
+		usdQuote := crypto.Quote["USD"]
+		lastUpdated, _ := time.Parse(time.RFC3339, usdQuote.LastUpdated)
 		result[id] = TokenInfo{
-			Price:  crypto.Quote["USD"].Price,
-			Symbol: crypto.Symbol,
+			Price:            usdQuote.Price,
+			Symbol:           crypto.Symbol,
+			PercentChange1h:  usdQuote.PercentChange1h,
+			PercentChange24h: usdQuote.PercentChange24h,
+			LastUpdated:      lastUpdated,
 		}
 	}
 

@@ -199,8 +199,20 @@ const docTemplate = `{
         "utils.TokenInfo": {
             "type": "object",
             "properties": {
+                "lastUpdated": {
+                    "type": "string"
+                },
+                "percentChange1h": {
+                    "type": "number",
+                    "format": "float64"
+                },
+                "percentChange24h": {
+                    "type": "number",
+                    "format": "float64"
+                },
                 "price": {
-                    "type": "number"
+                    "type": "number",
+                    "format": "float64"
                 },
                 "symbol": {
                     "type": "string"

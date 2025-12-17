@@ -60,8 +60,7 @@ func (s *dexPairService) GetDexPairInfo(contractAddresses []string, networkSlug,
 			// Format LastUpdated
 			parsedTime, err := time.Parse(time.RFC3339, quote.LastUpdated)
 			if err == nil {
-				loc := time.FixedZone("UTC+8", 8*60*60)
-				info.LastUpdated = parsedTime.In(loc).Format("2006-01-02 15:04:05")
+				info.LastUpdated = utils.FormatBJTime(parsedTime)
 			} else {
 				info.LastUpdated = quote.LastUpdated
 			}

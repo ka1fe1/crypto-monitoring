@@ -54,16 +54,33 @@ func main() {
 	// Initialize Handlers
 	_ = handlers.NewDexPairHandler(dexService)
 
-	// Initialize DingTalk Bot
-	dingBot := dingding.NewDingBot(cfg.DingTalk.AccessToken, cfg.DingTalk.Secret, cfg.DingTalk.Keyword)
+	// Initialize DingTalk Bots
+	dingBots := make(map[string]*dingding.DingBot)
+	for name, botCfg := range cfg.DingTalk {
+		dingBots[name] = dingding.NewDingBot(botCfg.AccessToken, botCfg.Secret, botCfg.Keyword)
+	}
 
 	// Initialize Binance Service
 	// binanceAnnouncementService := service.NewBinanceAnnouncementService(cfg.BinanceCex.APIKey, cfg.BinanceCex.SecretKey, cfg.BinanceCex.ProxyURL, dingBot)
 	// go binanceAnnouncementService.Start(context.Background())
 
 	// Initialize Tasks
-	priceAlertTask := tasks.NewDexPairAlterTask(dexService, dingBot, cfg.DexPairAlter.ContractAddrInfo, cfg.DexPairAlter.IntervalSeconds)
-	priceAlertTask.Start()
+	dexPairAlterBot := dingBots[cfg.DexPairAlter.BotName]
+	if dexPairAlterBot != nil {
+		priceAlertTask := tasks.NewDexPairAlterTask(dexService, dexPairAlterBot, cfg.DexPairAlter.ContractAddrInfo, cfg.DexPairAlter.IntervalSeconds)
+		priceAlertTask.Start()
+	} else {
+		log.Printf("Warning: Bot %s not found for DexPairAlterTask", cfg.DexPairAlter.BotName)
+	}
+
+	tokenService := service.NewTokenService(client)
+	tokenPriceMonitorBot := dingBots[cfg.TokenPriceMonitor.BotName]
+	if tokenPriceMonitorBot != nil {
+		tokenPriceMonitorTask := tasks.NewTokenPriceMonitorTask(tokenService, tokenPriceMonitorBot, cfg.TokenPriceMonitor.TokenIds, cfg.TokenPriceMonitor.IntervalSeconds)
+		tokenPriceMonitorTask.Start()
+	} else {
+		log.Printf("Warning: Bot %s not found for TokenPriceMonitorTask", cfg.TokenPriceMonitor.BotName)
+	}
 
 	// SetupRouter
 	r := routers.SetupRouter(cfg)

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 )
 
 var client *CoinMarketClient
@@ -87,7 +88,7 @@ func TestGetDexPairQuotes(t *testing.T) {
 	// Example: WETH/USDC pair on Ethereum
 	// Contract Address: 0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640 (Uniswap V3)
 	contractAddress := "0xb67e5eaf770a384ab28029d08b9bc5ebe32beb0f"
-	networkId := BNB_NETWORK_ID
+	networkId := constant.BNB_NETWORK_ID
 
 	pairs, err := client.GetDexPairQuotes([]string{contractAddress}, "", networkId)
 	if err != nil {

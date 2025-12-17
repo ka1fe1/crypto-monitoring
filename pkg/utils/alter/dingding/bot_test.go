@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 )
 
 var (
@@ -48,9 +49,9 @@ func TestMain(m *testing.M) {
 
 	var token, secret, keyword string
 	if cfg != nil {
-		token = cfg.DingTalk.AccessToken
-		secret = cfg.DingTalk.Secret
-		keyword = cfg.DingTalk.Keyword
+		token = cfg.DingTalk[constant.DEFAULT_BOT_NAME].AccessToken
+		secret = cfg.DingTalk[constant.DEFAULT_BOT_NAME].Secret
+		keyword = cfg.DingTalk[constant.DEFAULT_BOT_NAME].Keyword
 	}
 
 	bot = NewDingBot(token, secret, keyword)

@@ -10,11 +10,12 @@ import (
 )
 
 type Config struct {
-	Server        ServerConfig        `yaml:"server"`
-	CoinMarketCap CoinMarketCapConfig `yaml:"coinmarketcap"`
-	DingTalk      DingTalkConfig      `yaml:"dingtalk"`
-	DexPairAlter  DexPairAlterConfig  `yaml:"dex_pair_alter"`
-	BinanceCex    BinanceCexConfig    `yaml:"binance-cex"`
+	Server            ServerConfig              `yaml:"server"`
+	CoinMarketCap     CoinMarketCapConfig       `yaml:"coinmarketcap"`
+	DingTalk          map[string]DingTalkConfig `yaml:"dingtalk"`
+	DexPairAlter      DexPairAlterConfig        `yaml:"dex_pair_alter"`
+	TokenPriceMonitor TokenPriceMonitorConfig   `yaml:"token_price_monitor"`
+	BinanceCex        BinanceCexConfig          `yaml:"binance-cex"`
 }
 
 type ServerConfig struct {
@@ -28,14 +29,21 @@ type CoinMarketCapConfig struct {
 type DingTalkConfig struct {
 	AccessToken string `yaml:"access_token"`
 	Secret      string `yaml:"secret"`
-	Keyword     string `yaml:"keyword"`
+	Keyword     string
 }
 
 type DexPairAlterConfig struct {
 	ContractAddrs   []string `yaml:"contract_addrs"`
 	IntervalSeconds int      `yaml:"interval_seconds"`
+	BotName         string   `yaml:"bot_name"`
 	// key: networkId, value: contractAddrs
 	ContractAddrInfo map[string][]string
+}
+
+type TokenPriceMonitorConfig struct {
+	TokenIds        string `yaml:"token_ids"`
+	IntervalSeconds int    `yaml:"interval_seconds"`
+	BotName         string `yaml:"bot_name"`
 }
 
 type BinanceCexConfig struct {
@@ -71,6 +79,12 @@ func LoadConfig(path string) (*Config, error) {
 			}
 			cfg.DexPairAlter.ContractAddrInfo[networkId] = trimmedAddrs
 		}
+	}
+
+	// set keyword equal to bot name
+	for botName, v := range cfg.DingTalk {
+		v.Keyword = botName
+		cfg.DingTalk[botName] = v
 	}
 	return &cfg, nil
 }

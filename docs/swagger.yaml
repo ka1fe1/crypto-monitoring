@@ -19,7 +19,16 @@ definitions:
     type: object
   utils.TokenInfo:
     properties:
+      lastUpdated:
+        type: string
+      percentChange1h:
+        format: float64
+        type: number
+      percentChange24h:
+        format: float64
+        type: number
       price:
+        format: float64
         type: number
       symbol:
         type: string
