@@ -82,6 +82,64 @@
                 }
             }
         },
+        "/api/v1/nft/floor_price": {
+            "get": {
+                "description": "Get floor price of NFT collections",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "nft"
+                ],
+                "summary": "Get NFT Floor Price",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Collection Slugs (comma separated)",
+                        "name": "slugs",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Convert to USD",
+                        "name": "convert_to_usd",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.NFTFloorPriceInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/token/price": {
             "get": {
                 "description": "Get price of tokens by IDs",
@@ -185,6 +243,23 @@
                     "type": "number"
                 },
                 "price": {
+                    "type": "number"
+                }
+            }
+        },
+        "service.NFTFloorPriceInfo": {
+            "type": "object",
+            "properties": {
+                "collection_slug": {
+                    "type": "string"
+                },
+                "floor_price": {
+                    "type": "number"
+                },
+                "floor_price_symbol": {
+                    "type": "string"
+                },
+                "floor_price_usd": {
                     "type": "number"
                 }
             }

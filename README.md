@@ -53,7 +53,7 @@ make run
 
 #### 1. 构建镜像
 ```bash
-docker build -t crypto-monitoring .
+docker build -t crypto-monitoring:25121701 .
 ```
 
 #### 2. 运行容器 (挂载配置文件)
@@ -64,24 +64,24 @@ docker run -d \
   --name crypto-monitoring \
   -v $(pwd)/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -p 8080:8080 \
-  crypto-monitoring
+  crypto-monitoring:25121701
 ```
 
 #### 3. 常用命令
 
 *   **tag**
     ```bash
-    docker tag crypto-monitoring:25121102 tataka1takes2/crypto-monitoring:25121102
+    docker tag crypto-monitoring:25121701 tataka1takes2/crypto-monitoring:25121701
     ```
 
 *   **推送**
     ```bash
-    docker push tataka1takes2/crypto-monitoring:25121102
+    docker push tataka1takes2/crypto-monitoring:25121701
     ```
 
 *   **拉取**
     ```bash
-    docker pull tataka1takes2/crypto-monitoring:25121102
+    docker pull tataka1takes2/crypto-monitoring:25121701
     ```
 
 *   **删除容器**
@@ -106,8 +106,5 @@ docker run -d \
     docker logs -f crypto-monitoring
     ```
 
-
-
-帮我写一个监控 token 价格的定时任务，使用 tokenService 获取价格的方法，可一次性获取多个币种的价格，并将结果一次性使用 dingding bot 推送到群里
 
 

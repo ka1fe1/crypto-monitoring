@@ -10,12 +10,14 @@ import (
 )
 
 type Config struct {
-	Server            ServerConfig              `yaml:"server"`
-	CoinMarketCap     CoinMarketCapConfig       `yaml:"coinmarketcap"`
-	DingTalk          map[string]DingTalkConfig `yaml:"dingtalk"`
-	DexPairAlter      DexPairAlterConfig        `yaml:"dex_pair_alter"`
-	TokenPriceMonitor TokenPriceMonitorConfig   `yaml:"token_price_monitor"`
-	BinanceCex        BinanceCexConfig          `yaml:"binance-cex"`
+	Server               ServerConfig               `yaml:"server"`
+	CoinMarketCap        CoinMarketCapConfig        `yaml:"coinmarketcap"`
+	DingTalk             map[string]DingTalkConfig  `yaml:"dingtalk"`
+	DexPairAlter         DexPairAlterConfig         `yaml:"dex_pair_alter"`
+	TokenPriceMonitor    TokenPriceMonitorConfig    `yaml:"token_price_monitor"`
+	BinanceCex           BinanceCexConfig           `yaml:"binance-cex"`
+	OpenSea              OpenSeaConfig              `yaml:"opensea"`
+	NFTFloorPriceMonitor NFTFloorPriceMonitorConfig `yaml:"nft_floor_price_monitor"`
 }
 
 type ServerConfig struct {
@@ -23,6 +25,10 @@ type ServerConfig struct {
 }
 
 type CoinMarketCapConfig struct {
+	APIKey string `yaml:"api_key"`
+}
+
+type OpenSeaConfig struct {
 	APIKey string `yaml:"api_key"`
 }
 
@@ -46,6 +52,13 @@ type TokenPriceMonitorConfig struct {
 	BotName         string `yaml:"bot_name"`
 }
 
+type NFTFloorPriceMonitorConfig struct {
+	IntervalSeconds   int      `yaml:"interval_seconds"`
+	BotName           string   `yaml:"bot_name"`
+	NFTCollectionsStr string   `yaml:"nft_collections"`
+	NFTCollections    []string `yaml:"-"`
+}
+
 type BinanceCexConfig struct {
 	APIKey    string `yaml:"api_key"`
 	SecretKey string `yaml:"secret_key"`
@@ -63,6 +76,17 @@ func LoadConfig(path string) (*Config, error) {
 	decoder := yaml.NewDecoder(f)
 	if err := decoder.Decode(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to decode config file: %w", err)
+	}
+
+	// Parse NFTFloorPriceMonitor NFTCollections
+	if cfg.NFTFloorPriceMonitor.NFTCollectionsStr != "" {
+		parts := strings.Split(cfg.NFTFloorPriceMonitor.NFTCollectionsStr, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.NFTFloorPriceMonitor.NFTCollections = append(cfg.NFTFloorPriceMonitor.NFTCollections, trimmed)
+			}
+		}
 	}
 
 	// Parse ContractAddrInfo

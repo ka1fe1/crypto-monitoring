@@ -17,6 +17,13 @@ token_price_monitor:
     bot_name: "default"
     token_ids: "1,1027,825"
     interval_seconds: 60
+nft_floor_price_monitor:
+    bot_name: "default"
+    interval_seconds: 3600
+    nft_collections: "infinex-patrons,another-collection"
 binance-cex:
     api_key: "YOUR_API_KEY_HERE"
     secret_key: ""
+opensea:
+    api_key: "YOUR_OPENSEA_API_KEY"
+    proxy_url: "http://127.0.0.1:7890"

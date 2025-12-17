@@ -17,6 +17,17 @@ definitions:
       price:
         type: number
     type: object
+  service.NFTFloorPriceInfo:
+    properties:
+      collection_slug:
+        type: string
+      floor_price:
+        type: number
+      floor_price_symbol:
+        type: string
+      floor_price_usd:
+        type: number
+    type: object
   utils.TokenInfo:
     properties:
       lastUpdated:
@@ -92,6 +103,44 @@ paths:
       summary: Get Dex Pair Info
       tags:
       - dex
+  /api/v1/nft/floor_price:
+    get:
+      consumes:
+      - application/json
+      description: Get floor price of NFT collections
+      parameters:
+      - description: Collection Slugs (comma separated)
+        in: query
+        name: slugs
+        type: string
+      - description: Convert to USD
+        in: query
+        name: convert_to_usd
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/service.NFTFloorPriceInfo'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get NFT Floor Price
+      tags:
+      - nft
   /api/v1/token/price:
     get:
       consumes:

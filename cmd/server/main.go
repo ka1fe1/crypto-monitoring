@@ -13,6 +13,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/internal/tasks"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/opensea"
 )
 
 // @title           Crypto Monitoring API
@@ -46,10 +47,10 @@ func main() {
 	}
 
 	// Initialize CoinMarketCap Client
-	client := utils.NewCoinMarketClient(cfg.CoinMarketCap.APIKey)
+	cmcClient := utils.NewCoinMarketClient(cfg.CoinMarketCap.APIKey)
 
 	// Initialize Services
-	dexService := service.NewDexPairService(client)
+	dexService := service.NewDexPairService(cmcClient)
 
 	// Initialize Handlers
 	_ = handlers.NewDexPairHandler(dexService)
@@ -73,13 +74,25 @@ func main() {
 		log.Printf("Warning: Bot %s not found for DexPairAlterTask", cfg.DexPairAlter.BotName)
 	}
 
-	tokenService := service.NewTokenService(client)
+	tokenService := service.NewTokenService(cmcClient)
 	tokenPriceMonitorBot := dingBots[cfg.TokenPriceMonitor.BotName]
 	if tokenPriceMonitorBot != nil {
 		tokenPriceMonitorTask := tasks.NewTokenPriceMonitorTask(tokenService, tokenPriceMonitorBot, cfg.TokenPriceMonitor.TokenIds, cfg.TokenPriceMonitor.IntervalSeconds)
 		tokenPriceMonitorTask.Start()
 	} else {
 		log.Printf("Warning: Bot %s not found for TokenPriceMonitorTask", cfg.TokenPriceMonitor.BotName)
+	}
+
+	// Initialize OpenSea Service and NFT Monitor Task
+	openSeaClient := opensea.NewOpenSeaClient(cfg.OpenSea.APIKey)
+	openSeaService := service.NewOpenSeaService(openSeaClient, cmcClient)
+
+	nftMonitorBot := dingBots[cfg.NFTFloorPriceMonitor.BotName]
+	if nftMonitorBot != nil {
+		nftMonitorTask := tasks.NewNFTFloorPriceMonitorTask(openSeaService, nftMonitorBot, cfg.NFTFloorPriceMonitor.NFTCollections, cfg.NFTFloorPriceMonitor.IntervalSeconds)
+		nftMonitorTask.Start()
+	} else {
+		log.Printf("Warning: Bot %s not found for NFTFloorPriceMonitorTask", cfg.NFTFloorPriceMonitor.BotName)
 	}
 
 	// SetupRouter
