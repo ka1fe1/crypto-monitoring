@@ -13,4 +13,4 @@ dex_pair_alter:
     interval_seconds: 60
 binance-cex:
     api_key: "YOUR_API_KEY_HERE"
-    secret_key: "IRR9KNb9OG4YRwzUUaefmb5ej0XD7CLjaNlv5lzd5tvLKrBlENy6bRNfyI10oF8B"
+    secret_key: ""
