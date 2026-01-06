@@ -14,6 +14,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/opensea"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 )
 
 // @title           Crypto Monitoring API
@@ -61,39 +62,16 @@ func main() {
 		dingBots[name] = dingding.NewDingBot(botCfg.AccessToken, botCfg.Secret, botCfg.Keyword)
 	}
 
-	// Initialize Binance Service
-	// binanceAnnouncementService := service.NewBinanceAnnouncementService(cfg.BinanceCex.APIKey, cfg.BinanceCex.SecretKey, cfg.BinanceCex.ProxyURL, dingBot)
-	// go binanceAnnouncementService.Start(context.Background())
-
-	// Initialize Tasks
-	dexPairAlterBot := dingBots[cfg.DexPairAlter.BotName]
-	if dexPairAlterBot != nil {
-		priceAlertTask := tasks.NewDexPairAlterTask(dexService, dexPairAlterBot, cfg.DexPairAlter.ContractAddrInfo, cfg.DexPairAlter.IntervalSeconds)
-		priceAlertTask.Start()
-	} else {
-		log.Printf("Warning: Bot %s not found for DexPairAlterTask", cfg.DexPairAlter.BotName)
-	}
-
+	// Initialize Tokens & OpenSea
 	tokenService := service.NewTokenService(cmcClient)
-	tokenPriceMonitorBot := dingBots[cfg.TokenPriceMonitor.BotName]
-	if tokenPriceMonitorBot != nil {
-		tokenPriceMonitorTask := tasks.NewTokenPriceMonitorTask(tokenService, tokenPriceMonitorBot, cfg.TokenPriceMonitor.TokenIds, cfg.TokenPriceMonitor.IntervalSeconds)
-		tokenPriceMonitorTask.Start()
-	} else {
-		log.Printf("Warning: Bot %s not found for TokenPriceMonitorTask", cfg.TokenPriceMonitor.BotName)
-	}
-
-	// Initialize OpenSea Service and NFT Monitor Task
 	openSeaClient := opensea.NewOpenSeaClient(cfg.OpenSea.APIKey)
 	openSeaService := service.NewOpenSeaService(openSeaClient, cmcClient)
 
-	nftMonitorBot := dingBots[cfg.NFTFloorPriceMonitor.BotName]
-	if nftMonitorBot != nil {
-		nftMonitorTask := tasks.NewNFTFloorPriceMonitorTask(openSeaService, nftMonitorBot, cfg.NFTFloorPriceMonitor.NFTCollections, cfg.NFTFloorPriceMonitor.IntervalSeconds)
-		nftMonitorTask.Start()
-	} else {
-		log.Printf("Warning: Bot %s not found for NFTFloorPriceMonitorTask", cfg.NFTFloorPriceMonitor.BotName)
-	}
+	// Initialize Polymarket
+	polyClient := polymarket.NewClient(cfg.Polymarket.APIKey)
+
+	// Initialize and Start Tasks
+	tasks.InitTasks(cfg, dingBots, dexService, tokenService, openSeaService, polyClient)
 
 	// SetupRouter
 	r := routers.SetupRouter(cfg)

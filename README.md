@@ -64,7 +64,7 @@ docker run -d \
   --name crypto-monitoring \
   -v $(pwd)/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -p 8080:8080 \
-  crypto-monitoring:25121702
+  tataka1takes2/crypto-monitoring:2601061849
 ```
 
 #### 3. 常用命令
@@ -103,7 +103,7 @@ docker run -d \
     ```
 *   **查看日志**
     ```bash
-    docker logs -f crypto-  
+    docker logs -f crypto-monitoring
     ```
 
 
