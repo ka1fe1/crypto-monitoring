@@ -18,6 +18,9 @@ type Config struct {
 	BinanceCex           BinanceCexConfig           `yaml:"binance-cex"`
 	OpenSea              OpenSeaConfig              `yaml:"opensea"`
 	NFTFloorPriceMonitor NFTFloorPriceMonitorConfig `yaml:"nft_floor_price_monitor"`
+	CoinGlass            CoinGlassConfig            `yaml:"coinglass"`
+	Polymarket           PolymarketConfig           `yaml:"polymarket"`
+	PolymarketMonitor    PolymarketMonitorConfig    `yaml:"polymarket_monitor"`
 }
 
 type ServerConfig struct {
@@ -65,6 +68,21 @@ type BinanceCexConfig struct {
 	ProxyURL  string `yaml:"proxy_url"`
 }
 
+type CoinGlassConfig struct {
+	APIKey string `yaml:"api_key"`
+}
+
+type PolymarketConfig struct {
+	APIKey string `yaml:"api_key"`
+}
+
+type PolymarketMonitorConfig struct {
+	IntervalSeconds int      `yaml:"interval_seconds"`
+	BotName         string   `yaml:"bot_name"`
+	MarketIDsStr    string   `yaml:"market_ids"`
+	MarketIDs       []string `yaml:"-"`
+}
+
 func LoadConfig(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -85,6 +103,17 @@ func LoadConfig(path string) (*Config, error) {
 			trimmed := strings.TrimSpace(p)
 			if trimmed != "" {
 				cfg.NFTFloorPriceMonitor.NFTCollections = append(cfg.NFTFloorPriceMonitor.NFTCollections, trimmed)
+			}
+		}
+	}
+
+	// Parse PolymarketMonitor MarketIDs
+	if cfg.PolymarketMonitor.MarketIDsStr != "" {
+		parts := strings.Split(cfg.PolymarketMonitor.MarketIDsStr, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.PolymarketMonitor.MarketIDs = append(cfg.PolymarketMonitor.MarketIDs, trimmed)
 			}
 		}
 	}

@@ -32,3 +32,6 @@ bin/
 
 # config
 config/config.yaml
+
+# self file
+1.md

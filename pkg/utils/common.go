@@ -7,9 +7,9 @@ import (
 )
 
 func PrintJson(obj interface{}) string {
-	b, err := json.Marshal(obj)
+	b, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
-		return fmt.Sprintf("unmarshal error: %v", err.Error())
+		return fmt.Sprintf("marshal error: %v", err.Error())
 	}
 	return string(b)
 }

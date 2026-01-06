@@ -53,7 +53,7 @@ make run
 
 #### 1. 构建镜像
 ```bash
-docker build -t crypto-monitoring:25121701 .
+docker build -t crypto-monitoring:25121702 .
 ```
 
 #### 2. 运行容器 (挂载配置文件)
@@ -64,29 +64,29 @@ docker run -d \
   --name crypto-monitoring \
   -v $(pwd)/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -p 8080:8080 \
-  crypto-monitoring:25121701
+  crypto-monitoring:25121702
 ```
 
 #### 3. 常用命令
 
 *   **tag**
     ```bash
-    docker tag crypto-monitoring:25121701 tataka1takes2/crypto-monitoring:25121701
+    docker tag crypto-monitoring:25121702 tataka1takes2/crypto-monitoring:25121702
     ```
 
 *   **推送**
     ```bash
-    docker push tataka1takes2/crypto-monitoring:25121701
+    docker push tataka1takes2/crypto-monitoring:25121702
     ```
 
 *   **拉取**
     ```bash
-    docker pull tataka1takes2/crypto-monitoring:25121701
+    docker pull tataka1takes2/crypto-monitoring:25121702
     ```
 
 *   **删除容器**
     ```bash
-    docker container rm crypto-monitoring
+    docker container rm -f crypto-monitoring
     ```
 *   **删除镜像**
     ```bash
@@ -103,7 +103,7 @@ docker run -d \
     ```
 *   **查看日志**
     ```bash
-    docker logs -f crypto-monitoring
+    docker logs -f crypto-  
     ```
 
 
