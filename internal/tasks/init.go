@@ -25,8 +25,19 @@ func InitTasks(
 	if cfg.DexPairAlter.IntervalSeconds > 0 {
 		dexBot := dingBots[cfg.DexPairAlter.BotName]
 		if dexBot != nil {
-			// DexPair: Pause during 00:00-07:00
-			qh := utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			var qh utils.QuietHoursParams
+			if cfg.DexPairAlter.QuietHours != nil {
+				qh = utils.QuietHoursParams{
+					Enabled:            cfg.DexPairAlter.QuietHours.Enabled,
+					StartHour:          cfg.DexPairAlter.QuietHours.StartHour,
+					EndHour:            cfg.DexPairAlter.QuietHours.EndHour,
+					Behavior:           cfg.DexPairAlter.QuietHours.Behavior,
+					ThrottleMultiplier: cfg.DexPairAlter.QuietHours.ThrottleMultiplier,
+				}
+			} else {
+				// Default: Pause during 00:00-08:00
+				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			}
 			NewDexPairAlterTask(dexService, dexBot, cfg.DexPairAlter.ContractAddrInfo, cfg.DexPairAlter.IntervalSeconds, qh).Start()
 		} else {
 			log.Printf("Warning: Bot %s not found for DexPairAlterTask", cfg.DexPairAlter.BotName)
@@ -37,8 +48,19 @@ func InitTasks(
 	if cfg.TokenPriceMonitor.IntervalSeconds > 0 {
 		tokenBot := dingBots[cfg.TokenPriceMonitor.BotName]
 		if tokenBot != nil {
-			// TokenPrice: Pause during 00:00-07:00
-			qh := utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_THROTTLE, ThrottleMultiplier: 5}
+			var qh utils.QuietHoursParams
+			if cfg.TokenPriceMonitor.QuietHours != nil {
+				qh = utils.QuietHoursParams{
+					Enabled:            cfg.TokenPriceMonitor.QuietHours.Enabled,
+					StartHour:          cfg.TokenPriceMonitor.QuietHours.StartHour,
+					EndHour:            cfg.TokenPriceMonitor.QuietHours.EndHour,
+					Behavior:           cfg.TokenPriceMonitor.QuietHours.Behavior,
+					ThrottleMultiplier: cfg.TokenPriceMonitor.QuietHours.ThrottleMultiplier,
+				}
+			} else {
+				// Default: Pause during 00:00-08:00, Throttle
+				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_THROTTLE, ThrottleMultiplier: 5}
+			}
 			NewTokenPriceMonitorTask(tokenService, tokenBot, cfg.TokenPriceMonitor.TokenIds, cfg.TokenPriceMonitor.IntervalSeconds, qh).Start()
 		} else {
 			log.Printf("Warning: Bot %s not found for TokenPriceMonitorTask", cfg.TokenPriceMonitor.BotName)
@@ -49,8 +71,19 @@ func InitTasks(
 	if cfg.NFTFloorPriceMonitor.IntervalSeconds > 0 {
 		nftBot := dingBots[cfg.NFTFloorPriceMonitor.BotName]
 		if nftBot != nil {
-			// NFT: Pause during 00:00-07:00
-			qh := utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			var qh utils.QuietHoursParams
+			if cfg.NFTFloorPriceMonitor.QuietHours != nil {
+				qh = utils.QuietHoursParams{
+					Enabled:            cfg.NFTFloorPriceMonitor.QuietHours.Enabled,
+					StartHour:          cfg.NFTFloorPriceMonitor.QuietHours.StartHour,
+					EndHour:            cfg.NFTFloorPriceMonitor.QuietHours.EndHour,
+					Behavior:           cfg.NFTFloorPriceMonitor.QuietHours.Behavior,
+					ThrottleMultiplier: cfg.NFTFloorPriceMonitor.QuietHours.ThrottleMultiplier,
+				}
+			} else {
+				// Default: Pause during 00:00-08:00
+				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			}
 			NewNFTFloorPriceMonitorTask(openSeaService, nftBot, cfg.NFTFloorPriceMonitor.NFTCollections, cfg.NFTFloorPriceMonitor.IntervalSeconds, qh).Start()
 		} else {
 			log.Printf("Warning: Bot %s not found for NFTFloorPriceMonitorTask", cfg.NFTFloorPriceMonitor.BotName)
@@ -61,8 +94,19 @@ func InitTasks(
 	if cfg.PolymarketMonitor.IntervalSeconds > 0 {
 		polyBot := dingBots[cfg.PolymarketMonitor.BotName]
 		if polyBot != nil {
-			// Polymarket: Pause during 00:00-07:00
-			qh := utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			var qh utils.QuietHoursParams
+			if cfg.PolymarketMonitor.QuietHours != nil {
+				qh = utils.QuietHoursParams{
+					Enabled:            cfg.PolymarketMonitor.QuietHours.Enabled,
+					StartHour:          cfg.PolymarketMonitor.QuietHours.StartHour,
+					EndHour:            cfg.PolymarketMonitor.QuietHours.EndHour,
+					Behavior:           cfg.PolymarketMonitor.QuietHours.Behavior,
+					ThrottleMultiplier: cfg.PolymarketMonitor.QuietHours.ThrottleMultiplier,
+				}
+			} else {
+				// Default: Pause during 00:00-08:00
+				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			}
 			NewPolymarketMonitorTask(polyClient, polyBot, cfg.PolymarketMonitor.MarketIDs, cfg.PolymarketMonitor.IntervalSeconds, qh).Start()
 		} else {
 			log.Printf("Warning: Bot %s not found for PolymarketMonitorTask", cfg.PolymarketMonitor.BotName)
@@ -73,9 +117,19 @@ func InitTasks(
 	if cfg.TwitterMonitor.IntervalSeconds > 0 {
 		twitterBot := dingBots[cfg.TwitterMonitor.BotName]
 		if twitterBot != nil {
-			// Twitter: Pause during 00:00-07:00
-			// Example throttling: qh := utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_THROTTLE, ThrottleMultiplier: 10}
-			qh := utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			var qh utils.QuietHoursParams
+			if cfg.TwitterMonitor.QuietHours != nil {
+				qh = utils.QuietHoursParams{
+					Enabled:            cfg.TwitterMonitor.QuietHours.Enabled,
+					StartHour:          cfg.TwitterMonitor.QuietHours.StartHour,
+					EndHour:            cfg.TwitterMonitor.QuietHours.EndHour,
+					Behavior:           cfg.TwitterMonitor.QuietHours.Behavior,
+					ThrottleMultiplier: cfg.TwitterMonitor.QuietHours.ThrottleMultiplier,
+				}
+			} else {
+				// Default: Pause during 00:00-07:00
+				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			}
 			NewTwitterMonitorTask(twitterClient, twitterBot, cfg.TwitterMonitor.Usernames, cfg.TwitterMonitor.IntervalSeconds, qh).Start()
 		} else {
 			log.Printf("Warning: Bot %s not found for TwitterMonitorTask", cfg.TwitterMonitor.BotName)

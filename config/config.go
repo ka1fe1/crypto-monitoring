@@ -49,19 +49,22 @@ type DexPairAlterConfig struct {
 	BotName         string   `yaml:"bot_name"`
 	// key: networkId, value: contractAddrs
 	ContractAddrInfo map[string][]string
+	QuietHours       *QuietHoursConfig `yaml:"quiet_hours"`
 }
 
 type TokenPriceMonitorConfig struct {
-	TokenIds        string `yaml:"token_ids"`
-	IntervalSeconds int    `yaml:"interval_seconds"`
-	BotName         string `yaml:"bot_name"`
+	TokenIds        string            `yaml:"token_ids"`
+	IntervalSeconds int               `yaml:"interval_seconds"`
+	BotName         string            `yaml:"bot_name"`
+	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
 }
 
 type NFTFloorPriceMonitorConfig struct {
-	IntervalSeconds   int      `yaml:"interval_seconds"`
-	BotName           string   `yaml:"bot_name"`
-	NFTCollectionsStr string   `yaml:"nft_collections"`
-	NFTCollections    []string `yaml:"-"`
+	IntervalSeconds   int               `yaml:"interval_seconds"`
+	BotName           string            `yaml:"bot_name"`
+	NFTCollectionsStr string            `yaml:"nft_collections"`
+	NFTCollections    []string          `yaml:"-"`
+	QuietHours        *QuietHoursConfig `yaml:"quiet_hours"`
 }
 
 type BinanceCexConfig struct {
@@ -83,17 +86,27 @@ type TwitterConfig struct {
 }
 
 type PolymarketMonitorConfig struct {
-	IntervalSeconds int      `yaml:"interval_seconds"`
-	BotName         string   `yaml:"bot_name"`
-	MarketIDsStr    string   `yaml:"market_ids"`
-	MarketIDs       []string `yaml:"-"`
+	IntervalSeconds int               `yaml:"interval_seconds"`
+	BotName         string            `yaml:"bot_name"`
+	MarketIDsStr    string            `yaml:"market_ids"`
+	MarketIDs       []string          `yaml:"-"`
+	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
 }
 
 type TwitterMonitorConfig struct {
-	IntervalSeconds int      `yaml:"interval_seconds"`
-	BotName         string   `yaml:"bot_name"`
-	UsernamesStr    string   `yaml:"usernames"`
-	Usernames       []string `yaml:"-"`
+	IntervalSeconds int               `yaml:"interval_seconds"`
+	BotName         string            `yaml:"bot_name"`
+	UsernamesStr    string            `yaml:"usernames"`
+	Usernames       []string          `yaml:"-"`
+	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
+}
+
+type QuietHoursConfig struct {
+	Enabled            bool   `yaml:"enabled"`
+	StartHour          int    `yaml:"start_hour"`
+	EndHour            int    `yaml:"end_hour"`
+	Behavior           string `yaml:"behavior"`
+	ThrottleMultiplier int    `yaml:"throttle_multiplier"`
 }
 
 func LoadConfig(path string) (*Config, error) {
