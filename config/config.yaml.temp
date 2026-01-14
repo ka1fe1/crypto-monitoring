@@ -39,12 +39,12 @@ polymarket_monitor:
     market_ids: "983678,763535"
 twitter_monitor:
     bot_name: "x"
-    interval_seconds: 30
-    usernames: "cz_binance,heyibinance,binancezh"
+    interval_seconds: 10
+    usernames: "cz_binance,heyibinance"
     quiet_hours:
         enabled: true
-        start_hour: 12
-        end_hour: 14
+        start_hour: 0
+        end_hour: 8
         behavior: "pause"
 coinglass:
     api_key: "YOUR_API_KEY_HERE"

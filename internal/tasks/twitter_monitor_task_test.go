@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
@@ -62,6 +63,8 @@ func TestTwitterMonitorTask_Run(t *testing.T) {
 	// First run initializes the lastTweetIDs map
 	log.Printf("Running first time to initialize...")
 	task.run()
+
+	time.Sleep(60 * time.Second)
 
 	// If you want to test the multi-run logic, you can modify the map or wait for new tweets
 	// log.Printf("Running second time to check for new tweets...")

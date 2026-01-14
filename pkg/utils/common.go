@@ -95,3 +95,17 @@ func ShouldExecTask(params QuietHoursParams, lastRun time.Time, interval time.Du
 	// Default behavior is "pause"
 	return false
 }
+
+// SnowflakeToTime converts a Twitter Snowflake ID to time.Time
+// Twitter Snowflake ID is (timestamp_ms - 1288834974657) << 22
+func SnowflakeToTime(snowflakeID string) (time.Time, error) {
+	var id int64
+	_, err := fmt.Sscanf(snowflakeID, "%d", &id)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	// Right shift by 22 bits to get timestamp from epoch (Twitter epoch)
+	timestamp := (id >> 22) + 1288834974657
+	return time.UnixMilli(timestamp), nil
+}

@@ -90,7 +90,7 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 	lastID := t.lastTweetIDs[username]
 	t.lastTweetLock.RUnlock()
 
-	query := fmt.Sprintf("from:%s within_time:%s", username, "6h")
+	query := fmt.Sprintf("from:%s within_time:%s", username, "2h")
 	if lastID != "" {
 		query = fmt.Sprintf("from:%s since_id:%s", username, lastID)
 	}
@@ -101,12 +101,12 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 
 	resp, err := t.client.Search(req)
 	if err != nil {
-		log.Printf("Error searching tweets for %s: %v", username, err)
+		log.Printf("Error searching tweets, %s: %v", t.formatQueryForLog(req.Query, lastID), err)
 		return
 	}
 
 	if len(resp.Tweets) == 0 {
-		log.Printf("No new tweets for %s, query: %s", username, req.Query)
+		log.Printf("No new tweets, %s", t.formatQueryForLog(req.Query, lastID))
 		return
 	}
 
@@ -119,10 +119,10 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 	}
 
 	if len(filteredTweets) == 0 {
-		log.Printf("No tweets from %s found in results (filtered out mentions), query: %s", username, req.Query)
+		log.Printf("No tweets, query: %s found in results (filtered out mentions)", t.formatQueryForLog(req.Query, lastID))
 		return
 	} else {
-		log.Printf("Found %d tweets from %s, query: %s", len(filteredTweets), username, req.Query)
+		log.Printf("Found %d tweets, query: %s", len(filteredTweets), t.formatQueryForLog(req.Query, lastID))
 	}
 
 	// Sort filtered tweets by ID descending (Newest first) to ensure correct processing
@@ -173,7 +173,7 @@ func (t *TwitterMonitorTask) notifyTweets(username string, tweets []twitter.Twee
 		content += fmt.Sprintf("- %s\n", utils.FormatRelativeTime(tweet.CreatedAt))
 
 		if i < len(tweets)-1 {
-			content += "---\n\n"
+			content += "--- \n\n"
 		}
 	}
 
@@ -189,4 +189,14 @@ func (t *TwitterMonitorTask) notifyTweets(username string, tweets []twitter.Twee
 	} else {
 		log.Printf("Notified %d new tweets for %s", len(tweets), username)
 	}
+}
+
+func (t *TwitterMonitorTask) formatQueryForLog(query string, lastID string) string {
+	res := fmt.Sprintf("query: %s", query)
+	if lastID != "" {
+		if st, err := utils.SnowflakeToTime(lastID); err == nil {
+			res += fmt.Sprintf(" (since %s)", utils.FormatBJTime(st))
+		}
+	}
+	return res
 }
