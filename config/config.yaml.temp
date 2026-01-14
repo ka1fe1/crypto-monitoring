@@ -4,6 +4,8 @@ coinmarketcap:
     api_key: "YOUR_API_KEY_HERE"
 opensea:
     api_key: "YOUR_API_KEY_HERE"
+twitter:
+    api_key: YOUR_API_KEY_HERE
 dingtalk:
     "token":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
@@ -14,6 +16,8 @@ dingtalk:
     "nft":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
     "prediction":
+        access_token: "YOUR_ACCESS_TOKEN_HERE"
+    "x":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
 token_price_monitor:
     bot_name: "token"
@@ -27,11 +31,20 @@ dex_pair_alter:
     interval_seconds: 30
 nft_floor_price_monitor:
     bot_name: "nft"
-    interval_seconds: 20
+    interval_seconds: 30
     nft_collections: "infinex-patrons"
 polymarket_monitor:
     bot_name: "prediction"
-    interval_seconds: 10
+    interval_seconds: 15
     market_ids: "983678,763535"
+twitter_monitor:
+    bot_name: "x"
+    interval_seconds: 30
+    usernames: "cz_binance,heyibinance,binancezh"
+    quiet_hours:
+        enabled: true
+        start_hour: 12
+        end_hour: 14
+        behavior: "pause"
 coinglass:
     api_key: "YOUR_API_KEY_HERE"

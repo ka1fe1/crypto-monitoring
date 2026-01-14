@@ -16,7 +16,7 @@ deps:
 	go mod tidy
 	go mod vendor
 
-build: deps swagger
+build: fmt deps swagger
 	rm -rf bin
 	mkdir -p bin
 	go build -o bin/$(BINARY_NAME) $(MAIN_PATH)
