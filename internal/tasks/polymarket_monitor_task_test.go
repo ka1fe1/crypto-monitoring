@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
@@ -67,7 +68,8 @@ func TestPolymarketMonitorTask_Run(t *testing.T) {
 		marketIDs = []string{"983678"}
 	}
 
-	task := NewPolymarketMonitorTask(client, bot, marketIDs, cfg.PolymarketMonitor.IntervalSeconds)
+	qh := utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+	task := NewPolymarketMonitorTask(client, bot, marketIDs, cfg.PolymarketMonitor.IntervalSeconds, qh)
 
 	// Manually trigger run to test logic and notification
 	task.run()

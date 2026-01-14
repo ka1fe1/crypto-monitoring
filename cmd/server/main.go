@@ -15,6 +15,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/opensea"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/twitter"
 )
 
 // @title           Crypto Monitoring API
@@ -70,8 +71,11 @@ func main() {
 	// Initialize Polymarket
 	polyClient := polymarket.NewClient(cfg.Polymarket.APIKey)
 
+	// Initialize Twitter
+	twitterClient := twitter.NewTwitterClient(cfg.Twitter.APIKey)
+
 	// Initialize and Start Tasks
-	tasks.InitTasks(cfg, dingBots, dexService, tokenService, openSeaService, polyClient)
+	tasks.InitTasks(cfg, dingBots, dexService, tokenService, openSeaService, polyClient, twitterClient)
 
 	// SetupRouter
 	r := routers.SetupRouter(cfg)

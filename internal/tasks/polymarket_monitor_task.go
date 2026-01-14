@@ -12,27 +12,31 @@ import (
 )
 
 type PolymarketMonitorTask struct {
-	client    *polymarket.Client
-	dingBot   *dingding.DingBot
-	ticker    *time.Ticker
-	stop      chan bool
-	marketIDs []string
-	interval  time.Duration
+	client           *polymarket.Client
+	dingBot          *dingding.DingBot
+	ticker           *time.Ticker
+	stop             chan bool
+	marketIDs        []string
+	interval         time.Duration
+	quietHoursParams utils.QuietHoursParams
+	lastRunTime      time.Time
 }
 
-func NewPolymarketMonitorTask(client *polymarket.Client, dingBot *dingding.DingBot, marketIDs []string, intervalSeconds int) *PolymarketMonitorTask {
+func NewPolymarketMonitorTask(client *polymarket.Client, dingBot *dingding.DingBot, marketIDs []string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *PolymarketMonitorTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 3600 * time.Second
 	}
 
 	return &PolymarketMonitorTask{
-		client:    client,
-		dingBot:   dingBot,
-		stop:      make(chan bool),
-		marketIDs: marketIDs,
-		interval:  interval,
+		client:           client,
+		dingBot:          dingBot,
+		stop:             make(chan bool),
+		marketIDs:        marketIDs,
+		interval:         interval,
+		quietHoursParams: quietHoursParams,
 	}
+
 }
 
 func (t *PolymarketMonitorTask) Start() {
@@ -59,6 +63,12 @@ func (t *PolymarketMonitorTask) run() {
 	if len(t.marketIDs) == 0 {
 		return
 	}
+
+	if !utils.ShouldExecTask(t.quietHoursParams, t.lastRunTime, t.interval) {
+		log.Printf("Skipping Polymarket Monitor Task for %s in quiet hours", t.dingBot.Keyword)
+		return
+	}
+	t.lastRunTime = time.Now()
 
 	var allTexts []string
 	for _, id := range t.marketIDs {

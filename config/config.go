@@ -21,6 +21,8 @@ type Config struct {
 	CoinGlass            CoinGlassConfig            `yaml:"coinglass"`
 	Polymarket           PolymarketConfig           `yaml:"polymarket"`
 	PolymarketMonitor    PolymarketMonitorConfig    `yaml:"polymarket_monitor"`
+	Twitter              TwitterConfig              `yaml:"twitter"`
+	TwitterMonitor       TwitterMonitorConfig       `yaml:"twitter_monitor"`
 }
 
 type ServerConfig struct {
@@ -76,11 +78,22 @@ type PolymarketConfig struct {
 	APIKey string `yaml:"api_key"`
 }
 
+type TwitterConfig struct {
+	APIKey string `yaml:"api_key"`
+}
+
 type PolymarketMonitorConfig struct {
 	IntervalSeconds int      `yaml:"interval_seconds"`
 	BotName         string   `yaml:"bot_name"`
 	MarketIDsStr    string   `yaml:"market_ids"`
 	MarketIDs       []string `yaml:"-"`
+}
+
+type TwitterMonitorConfig struct {
+	IntervalSeconds int      `yaml:"interval_seconds"`
+	BotName         string   `yaml:"bot_name"`
+	UsernamesStr    string   `yaml:"usernames"`
+	Usernames       []string `yaml:"-"`
 }
 
 func LoadConfig(path string) (*Config, error) {
@@ -114,6 +127,17 @@ func LoadConfig(path string) (*Config, error) {
 			trimmed := strings.TrimSpace(p)
 			if trimmed != "" {
 				cfg.PolymarketMonitor.MarketIDs = append(cfg.PolymarketMonitor.MarketIDs, trimmed)
+			}
+		}
+	}
+
+	// Parse TwitterMonitor Usernames
+	if cfg.TwitterMonitor.UsernamesStr != "" {
+		parts := strings.Split(cfg.TwitterMonitor.UsernamesStr, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.TwitterMonitor.Usernames = append(cfg.TwitterMonitor.Usernames, trimmed)
 			}
 		}
 	}

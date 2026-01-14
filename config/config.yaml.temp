@@ -2,28 +2,36 @@ server:
     port: "8080"
 coinmarketcap:
     api_key: "YOUR_API_KEY_HERE"
+opensea:
+    api_key: "YOUR_API_KEY_HERE"
 dingtalk:
-    default:
+    "token":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
         secret: "YOUR_SECRET_HERE"
-        keyword: "通用提醒"
-dex_pair_alter:
-    bot_name: "default"
-    contract_addrs:
-        - "16: 2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix,DbsTAmxnFAWRvigSks6DahpKi5Ypz3w2BMKEejTJcGGm"
-        - "14: 0xb67e5eaf770a384ab28029d08b9bc5ebe32beb0f,0x2ad9c1ad5b06f953b69d39d6685d725cd330b9c5"
-    interval_seconds: 60
+    "dex-pair":
+        access_token: "YOUR_ACCESS_TOKEN_HERE"
+        secret: "YOUR_SECRET_HERE"
+    "nft":
+        access_token: "YOUR_ACCESS_TOKEN_HERE"
+    "prediction":
+        access_token: "YOUR_ACCESS_TOKEN_HERE"
 token_price_monitor:
-    bot_name: "default"
-    token_ids: "1,1027,825"
-    interval_seconds: 60
+    bot_name: "token"
+    token_ids: "1,1027,1839,5426"
+    interval_seconds: 10
+dex_pair_alter:
+    bot_name: "dex-pair"
+    contract_addrs:
+        - "16: 2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix"
+        - "14: 0xb67e5eaf770a384ab28029d08b9bc5ebe32beb0f"
+    interval_seconds: 30
 nft_floor_price_monitor:
-    bot_name: "default"
-    interval_seconds: 3600
-    nft_collections: "infinex-patrons,another-collection"
-binance-cex:
+    bot_name: "nft"
+    interval_seconds: 20
+    nft_collections: "infinex-patrons"
+polymarket_monitor:
+    bot_name: "prediction"
+    interval_seconds: 10
+    market_ids: "983678,763535"
+coinglass:
     api_key: "YOUR_API_KEY_HERE"
-    secret_key: ""
-opensea:
-    api_key: "YOUR_OPENSEA_API_KEY"
-    proxy_url: "http://127.0.0.1:7890"

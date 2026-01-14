@@ -12,15 +12,17 @@ import (
 )
 
 type TokenPriceMonitorTask struct {
-	tokenService service.TokenService
-	dingBot      *dingding.DingBot
-	ticker       *time.Ticker
-	stop         chan bool
-	tokenIds     []string
-	interval     time.Duration
+	tokenService     service.TokenService
+	dingBot          *dingding.DingBot
+	ticker           *time.Ticker
+	stop             chan bool
+	tokenIds         []string
+	interval         time.Duration
+	quietHoursParams utils.QuietHoursParams
+	lastRunTime      time.Time
 }
 
-func NewTokenPriceMonitorTask(tokenService service.TokenService, dingBot *dingding.DingBot, tokenIdsStr string, intervalSeconds int) *TokenPriceMonitorTask {
+func NewTokenPriceMonitorTask(tokenService service.TokenService, dingBot *dingding.DingBot, tokenIdsStr string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TokenPriceMonitorTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 60 * time.Second
@@ -37,12 +39,14 @@ func NewTokenPriceMonitorTask(tokenService service.TokenService, dingBot *dingdi
 	}
 
 	return &TokenPriceMonitorTask{
-		tokenService: tokenService,
-		dingBot:      dingBot,
-		stop:         make(chan bool),
-		tokenIds:     tokenIds,
-		interval:     interval,
+		tokenService:     tokenService,
+		dingBot:          dingBot,
+		stop:             make(chan bool),
+		tokenIds:         tokenIds,
+		interval:         interval,
+		quietHoursParams: quietHoursParams,
 	}
+
 }
 
 func (t *TokenPriceMonitorTask) Start() {
@@ -68,6 +72,11 @@ func (t *TokenPriceMonitorTask) run() {
 	if len(t.tokenIds) == 0 {
 		return
 	}
+
+	if !utils.ShouldExecTask(t.quietHoursParams, t.lastRunTime, t.interval) {
+		return
+	}
+	t.lastRunTime = time.Now()
 
 	prices, err := t.tokenService.GetTokenPrice(t.tokenIds)
 	if err != nil {

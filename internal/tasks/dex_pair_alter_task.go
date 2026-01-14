@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 )
 
@@ -17,9 +18,11 @@ type DexPairAlterTask struct {
 	stop             chan bool
 	contractAddrInfo map[string][]string
 	interval         time.Duration
+	quietHoursParams utils.QuietHoursParams
+	lastRunTime      time.Time
 }
 
-func NewDexPairAlterTask(dexService service.DexPairService, dingBot *dingding.DingBot, contractAddrInfo map[string][]string, intervalSeconds int) *DexPairAlterTask {
+func NewDexPairAlterTask(dexService service.DexPairService, dingBot *dingding.DingBot, contractAddrInfo map[string][]string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *DexPairAlterTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 60 * time.Second
@@ -30,7 +33,9 @@ func NewDexPairAlterTask(dexService service.DexPairService, dingBot *dingding.Di
 		stop:             make(chan bool),
 		contractAddrInfo: contractAddrInfo,
 		interval:         interval,
+		quietHoursParams: quietHoursParams,
 	}
+
 }
 
 func (t *DexPairAlterTask) Start() {
@@ -53,6 +58,11 @@ func (t *DexPairAlterTask) Stop() {
 }
 
 func (t *DexPairAlterTask) run() {
+	if !utils.ShouldExecTask(t.quietHoursParams, t.lastRunTime, t.interval) {
+		return
+	}
+	t.lastRunTime = time.Now()
+
 	var allTexts []string
 
 	for networkId, addrs := range t.contractAddrInfo {
