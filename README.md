@@ -1,38 +1,42 @@
 # Crypto Monitoring Service
 
-这个项目是一个基于 Go (Gin) 的加密货币监控服务，主要包含以下功能点：
+这个项目是一个基于 Go (Gin) 的多功能加密资产与社交媒体监控服务，旨在通过钉钉机器人实时推送各类监控提醒。
 
-## 1. API 服务 (RESTful API)
-提供了一系列 HTTP 接口供外部调用，并集成了 **Swagger** 文档。
+## 核心功能
 
-*   **Token 价格查询**: `GET /api/v1/token/price`
-    *   **功能**：根据 ID 查询加密货币的实时价格和 Symbol。
-    *   **实现**：`TokenService` -> `CoinMarketCap Client`。
-*   **DEX 交易对信息**: `GET /api/v1/dex/pair`
-    *   **功能**：根据合约地址和网络查询 DEX 交易对的详细信息（价格、流动性、涨跌幅等）。
-    *   **实现**：`DexPairService` -> `CoinMarketCap Client`。
-*   **健康检查**: `GET /ping`
-    *   **功能**：检查服务是否存活。
+### 1. 监控任务 (Background Tasks)
+支持通过 `config.yaml` 配置多种类型的监控任务，并支持 **Quiet Hours** (免打扰) 机制。
 
-## 2. 后台任务 (Background Tasks)
-*   **价格预警任务**: `DexPairAlterTask`
-    *   **功能**：每分钟定时轮询指定 DEX 交易对的价格。
-    *   **通知**：通过 **钉钉机器人 (DingTalk Bot)** 发送 Markdown 格式的价格预警消息，包含价格、涨跌幅、流动性等信息。
+*   **DEX 价格预警** (`DexPairAlterTask`)
+    *   监控指定链上 DEX 交易对的价格变化、流动性变动。
+    *   数据源：CoinMarketCap / DexScreener。
+*   **Token 价格监控** (`TokenPriceMonitorTask`)
+    *   监控 CEX/DEX 代币价格。
+*   **NFT 地板价监控** (`NFTFloorPriceMonitorTask`)
+    *   监控 OpenSea 等平台的 NFT Collection 地板价。
+*   **Polymarket 预测市场监控** (`PolymarketMonitorTask`)
+    *   监控 Polymarket 特定市场的概率变化与交易活动。
+*   **Twitter (X) 监控** (`TwitterMonitorTask`)
+    *   监控指定 Twitter 用户的最新推文 (推文、回复)。
+    *   支持解析 Snowflake ID 获取发推时间，提供更友好的日志与通知展示。
 
-## 3. 核心组件与集成
-*   **CoinMarketCap Client**: 封装了 CoinMarketCap 的 API 调用（支持 v2 和 v4 接口），用于获取核心数据。
-*   **DingTalk Bot**: 封装了钉钉机器人的消息发送功能。
+### 2. API 服务 (RESTful API)
+提供 HTTP 接口供外部系统集成，并集成了 **Swagger** 文档。
+*   `GET /api/v1/token/price`: 查询 Token 实时价格。
+*   `GET /api/v1/dex/pair`: 查询 DEX 交易对详情。
+*   `GET /ping`: 健康检查。
 
-## 4. 基础设施
-*   **Swagger 文档**: 自动生成的 API 文档，可在线调试 (`/swagger/index.html`)。
-*   **配置管理**: 使用 `config.yaml` 管理 API Key、预警配置等。
-*   **Makefile**: 提供了 `build`, `run`, `swagger` 等常用命令，方便开发和部署。
+### 3. 特性与组件
+*   **多平台集成**: CoinMarketCap, OpenSea, Polymarket, Twitter API, DingTalk Bot。
+*   **按需配置**: 支持针对每个 Task 独立配置轮询间隔、机器人 Token、监控目标。
+*   **免打扰模式 (Quiet Hours)**: 支持配置特定时间段（如 00:00-08:00）暂停或降低推送频率。
+*   **Docker 化**: 提供完整的 Docker 构建与部署支持。
 
 ## 快速开始
 
 ### 依赖
 *   Go 1.25+
-*   CoinMarketCap API Key
+*   相关 API Key (CoinMarketCap, OpenSea, Twitter, etc.)
 
 ### 运行
 ```bash
@@ -64,24 +68,24 @@ docker run -d \
   --name crypto-monitoring \
   -v $(pwd)/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -p 8080:8080 \
-  tataka1takes2/crypto-monitoring:2601141323
+  tataka1takes2/crypto-monitoring:2601141450
 ```
 
 #### 3. 常用命令
 
 *   **tag**
     ```bash
-    docker tag crypto-monitoring:2601141323 tataka1takes2/crypto-monitoring:2601141323
+    docker tag crypto-monitoring:2601141450 tataka1takes2/crypto-monitoring:2601141450
     ```
 
 *   **推送**
     ```bash
-    docker push tataka1takes2/crypto-monitoring:2601141323
+    docker push tataka1takes2/crypto-monitoring:2601141450
     ```
 
 *   **拉取**
     ```bash
-    docker pull tataka1takes2/crypto-monitoring:2601141323
+    docker pull tataka1takes2/crypto-monitoring:2601141450
     ```
 
 *   **删除容器**
