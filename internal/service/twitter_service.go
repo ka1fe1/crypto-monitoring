@@ -11,7 +11,7 @@ import (
 )
 
 type TwitterService interface {
-	FetchNewTweets(username string, lastID string, keywords []string) ([]twitter.Tweet, string, error)
+	FetchNewTweets(username string, withinTime string, lastID string, keywords []string) ([]twitter.Tweet, string, error)
 }
 
 type twitterService struct {
@@ -24,8 +24,11 @@ func NewTwitterService(client *twitter.TwitterClient) TwitterService {
 	}
 }
 
-func (s *twitterService) FetchNewTweets(username string, lastID string, keywords []string) ([]twitter.Tweet, string, error) {
-	query := fmt.Sprintf("from:%s within_time:%s", username, "2h")
+func (s *twitterService) FetchNewTweets(username string, withinTime string, lastID string, keywords []string) ([]twitter.Tweet, string, error) {
+	if withinTime == "" {
+		withinTime = "2h"
+	}
+	query := fmt.Sprintf("from:%s within_time:%s", username, withinTime)
 	if lastID != "" {
 		query = fmt.Sprintf("from:%s since_id:%s", username, lastID)
 	}
@@ -60,6 +63,7 @@ func (s *twitterService) FetchNewTweets(username string, lastID string, keywords
 		return nil, "", nil
 	} else {
 		logger.Info("Found %d tweets, %s", len(userTweets), logQuery)
+		logger.Debug("userTweets: %s", utils.PrintJson(userTweets))
 	}
 
 	// Step 2: Sort all user tweets by ID descending (Newest first) to determine newestID
@@ -90,8 +94,8 @@ func (s *twitterService) FetchNewTweets(username string, lastID string, keywords
 			}
 			if !match {
 				truncatedText := t.Text
-				if len([]rune(truncatedText)) > 20 {
-					truncatedText = string([]rune(truncatedText)[:20]) + "..."
+				if len([]rune(truncatedText)) > 50 {
+					truncatedText = string([]rune(truncatedText)[:50]) + "..."
 				}
 				logger.Debug("Filtered out tweet: %s, username: %s, missing keywords: [%s]", truncatedText, username, strings.Join(keywords, ", "))
 				continue

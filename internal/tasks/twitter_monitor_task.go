@@ -24,9 +24,10 @@ type TwitterMonitorTask struct {
 	quietHoursParams      utils.QuietHoursParams
 	lastRunTime           time.Time
 	keywords              map[string][]string
+	withinTime            string
 }
 
-func NewTwitterMonitorTask(twitterMonitorService service.TwitterService, dingBot *dingding.DingBot, usernames []string, keywords map[string][]string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TwitterMonitorTask {
+func NewTwitterMonitorTask(twitterMonitorService service.TwitterService, dingBot *dingding.DingBot, usernames []string, keywords map[string][]string, withinTime string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TwitterMonitorTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 600 * time.Second // Default 10 minutes
@@ -41,6 +42,7 @@ func NewTwitterMonitorTask(twitterMonitorService service.TwitterService, dingBot
 		lastTweetIDs:          make(map[string]string),
 		quietHoursParams:      quietHoursParams,
 		keywords:              keywords,
+		withinTime:            withinTime,
 	}
 
 }
@@ -91,7 +93,7 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 	lastID := t.lastTweetIDs[username]
 	t.lastTweetLock.RUnlock()
 
-	newTweets, newestID, err := t.twitterMonitorService.FetchNewTweets(username, lastID, t.keywords[username])
+	newTweets, newestID, err := t.twitterMonitorService.FetchNewTweets(username, t.withinTime, lastID, t.keywords[username])
 	if err != nil {
 		logger.Error("Error searching tweets for %s: %v", username, err)
 		return

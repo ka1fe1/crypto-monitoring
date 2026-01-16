@@ -109,6 +109,7 @@ type TwitterMonitorConfig struct {
 	Usernames       []string            `yaml:"-"`
 	KeywordsStr     map[string]string   `yaml:"keywords"`
 	Keywords        map[string][]string `yaml:"-"`
+	WithinTime      string              `yaml:"within_time"`
 	QuietHours      *QuietHoursConfig   `yaml:"quiet_hours"`
 }
 

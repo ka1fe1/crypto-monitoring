@@ -40,7 +40,7 @@ func TestTwitterMonitorTask_Run(t *testing.T) {
 	}
 
 	qh := utils.QuietHoursParams{Enabled: true, StartHour: 11, EndHour: 12, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
-	task := NewTwitterMonitorTask(twitterSvc, bot, usernames, cfg.TwitterMonitor.Keywords, cfg.TwitterMonitor.IntervalSeconds, qh)
+	task := NewTwitterMonitorTask(twitterSvc, bot, usernames, cfg.TwitterMonitor.Keywords, cfg.TwitterMonitor.WithinTime, cfg.TwitterMonitor.IntervalSeconds, qh)
 
 	// Manually trigger run to test logic and notification
 	// First run initializes the lastTweetIDs map
