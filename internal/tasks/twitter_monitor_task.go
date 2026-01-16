@@ -13,32 +13,34 @@ import (
 )
 
 type TwitterMonitorTask struct {
-	twitterService   service.TwitterMonitorService
-	dingBot          *dingding.DingBot
-	ticker           *time.Ticker
-	stop             chan bool
-	usernames        []string
-	interval         time.Duration
-	lastTweetIDs     map[string]string
-	lastTweetLock    sync.RWMutex
-	quietHoursParams utils.QuietHoursParams
-	lastRunTime      time.Time
+	twitterMonitorService service.TwitterService
+	dingBot               *dingding.DingBot
+	ticker                *time.Ticker
+	stop                  chan bool
+	usernames             []string
+	interval              time.Duration
+	lastTweetIDs          map[string]string
+	lastTweetLock         sync.RWMutex
+	quietHoursParams      utils.QuietHoursParams
+	lastRunTime           time.Time
+	keywords              map[string][]string
 }
 
-func NewTwitterMonitorTask(twitterService service.TwitterMonitorService, dingBot *dingding.DingBot, usernames []string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TwitterMonitorTask {
+func NewTwitterMonitorTask(twitterMonitorService service.TwitterService, dingBot *dingding.DingBot, usernames []string, keywords map[string][]string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TwitterMonitorTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 600 * time.Second // Default 10 minutes
 	}
 
 	return &TwitterMonitorTask{
-		twitterService:   twitterService,
-		dingBot:          dingBot,
-		stop:             make(chan bool),
-		usernames:        usernames,
-		interval:         interval,
-		lastTweetIDs:     make(map[string]string),
-		quietHoursParams: quietHoursParams,
+		twitterMonitorService: twitterMonitorService,
+		dingBot:               dingBot,
+		stop:                  make(chan bool),
+		usernames:             usernames,
+		interval:              interval,
+		lastTweetIDs:          make(map[string]string),
+		quietHoursParams:      quietHoursParams,
+		keywords:              keywords,
 	}
 
 }
@@ -89,7 +91,7 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 	lastID := t.lastTweetIDs[username]
 	t.lastTweetLock.RUnlock()
 
-	newTweets, newestID, err := t.twitterService.FetchNewTweets(username, lastID)
+	newTweets, newestID, err := t.twitterMonitorService.FetchNewTweets(username, lastID, t.keywords[username])
 	if err != nil {
 		logger.Error("Error searching tweets for %s: %v", username, err)
 		return
@@ -105,7 +107,7 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 }
 
 func (t *TwitterMonitorTask) notifyTweets(username string, tweets []twitter.Tweet) {
-	title := fmt.Sprintf("%s [%s] New Tweets", t.dingBot.Keyword, username)
+	title := fmt.Sprintf("%s [%s - %s] New Tweets", t.dingBot.Keyword, tweets[0].AuthorName, username)
 
 	content := t.formatTweets(tweets)
 

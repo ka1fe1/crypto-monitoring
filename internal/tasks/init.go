@@ -21,7 +21,7 @@ func InitTasks(
 	twitterClient *twitter.TwitterClient,
 ) {
 	// Create services
-	twitterMonitorService := service.NewTwitterMonitorService(twitterClient)
+	twitterMonitorService := service.NewTwitterService(twitterClient)
 	polymarketService := service.NewPolymarketMonitorService(polyClient)
 
 	// 1. DexPairAlterTask
@@ -133,7 +133,7 @@ func InitTasks(
 				// Default: Pause during 00:00-07:00
 				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
 			}
-			NewTwitterMonitorTask(twitterMonitorService, twitterBot, cfg.TwitterMonitor.Usernames, cfg.TwitterMonitor.IntervalSeconds, qh).Start()
+			NewTwitterMonitorTask(twitterMonitorService, twitterBot, cfg.TwitterMonitor.Usernames, cfg.TwitterMonitor.Keywords, cfg.TwitterMonitor.IntervalSeconds, qh).Start()
 		} else {
 			logger.Warn("Warning: Bot %s not found for TwitterMonitorTask", cfg.TwitterMonitor.BotName)
 		}

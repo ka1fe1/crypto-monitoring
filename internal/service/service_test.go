@@ -17,7 +17,7 @@ import (
 
 var (
 	polySvc    PolymarketMonitorService
-	twitterSvc TwitterMonitorService
+	twitterSvc TwitterService
 	tokenSvc   TokenService
 )
 
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 
 	// 2. Setup Twitter Service
 	twitterClient := twitter.NewTwitterClient(cfg.Twitter.APIKey)
-	twitterSvc = NewTwitterMonitorService(twitterClient)
+	twitterSvc = NewTwitterService(twitterClient)
 
 	// 3. Setup Token Service
 	tokenClient := utils.NewCoinMarketClient(cfg.CoinMarketCap.APIKey)

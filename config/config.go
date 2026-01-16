@@ -103,11 +103,13 @@ type PolymarketMonitorConfig struct {
 }
 
 type TwitterMonitorConfig struct {
-	IntervalSeconds int               `yaml:"interval_seconds"`
-	BotName         string            `yaml:"bot_name"`
-	UsernamesStr    string            `yaml:"usernames"`
-	Usernames       []string          `yaml:"-"`
-	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
+	IntervalSeconds int                 `yaml:"interval_seconds"`
+	BotName         string              `yaml:"bot_name"`
+	UsernamesStr    string              `yaml:"usernames"`
+	Usernames       []string            `yaml:"-"`
+	KeywordsStr     map[string]string   `yaml:"keywords"`
+	Keywords        map[string][]string `yaml:"-"`
+	QuietHours      *QuietHoursConfig   `yaml:"quiet_hours"`
 }
 
 type QuietHoursConfig struct {
@@ -169,6 +171,21 @@ func LoadConfig(path string) (*Config, error) {
 			if trimmed != "" {
 				cfg.TwitterMonitor.Usernames = append(cfg.TwitterMonitor.Usernames, trimmed)
 			}
+		}
+	}
+
+	// Parse Keywords for TwitterMonitor
+	cfg.TwitterMonitor.Keywords = make(map[string][]string)
+	for user, kwStr := range cfg.TwitterMonitor.KeywordsStr {
+		parts := strings.Split(kwStr, ",")
+		userKeywords := make([]string, 0, len(parts))
+		for _, p := range parts {
+			if trimmed := strings.TrimSpace(p); trimmed != "" {
+				userKeywords = append(userKeywords, trimmed)
+			}
+		}
+		if len(userKeywords) > 0 {
+			cfg.TwitterMonitor.Keywords[user] = userKeywords
 		}
 	}
 

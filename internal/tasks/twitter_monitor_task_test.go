@@ -28,7 +28,10 @@ func TestTwitterMonitorTask_Run(t *testing.T) {
 
 	bot := dingding.NewDingBot(botCfg.AccessToken, botCfg.Secret, botCfg.Keyword)
 	client := twitter.NewTwitterClient(cfg.Twitter.APIKey)
-	twitterService := service.NewTwitterMonitorService(client)
+	// Assuming 'mockTwitterClient' is intended to be 'client' based on context,
+	// and 'twitterService' is renamed to 'twitterSvc' as per the snippet.
+	// The instruction is to pass 'nil' for keywords.
+	twitterSvc := service.NewTwitterService(client)
 	usernames := cfg.TwitterMonitor.Usernames
 	if len(usernames) == 0 {
 		// Use a default one for testing if not configured
@@ -37,7 +40,7 @@ func TestTwitterMonitorTask_Run(t *testing.T) {
 	}
 
 	qh := utils.QuietHoursParams{Enabled: true, StartHour: 11, EndHour: 12, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
-	task := NewTwitterMonitorTask(twitterService, bot, usernames, cfg.TwitterMonitor.IntervalSeconds, qh)
+	task := NewTwitterMonitorTask(twitterSvc, bot, usernames, cfg.TwitterMonitor.Keywords, cfg.TwitterMonitor.IntervalSeconds, qh)
 
 	// Manually trigger run to test logic and notification
 	// First run initializes the lastTweetIDs map

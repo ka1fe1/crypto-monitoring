@@ -22,33 +22,35 @@ dingtalk:
 token_price_monitor:
     bot_name: "token"
     token_ids: "1,1027,1839,5426"
-    interval_seconds: 150000
+    interval_seconds: 10
 dex_pair_alter:
     bot_name: "dex-pair"
     contract_addrs:
         - "16: 2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix"
         - "14: 0xb67e5eaf770a384ab28029d08b9bc5ebe32beb0f"
-    interval_seconds: 150000
+    interval_seconds: 15
 nft_floor_price_monitor:
     bot_name: "nft"
-    interval_seconds: 150000
+    interval_seconds: 15
     nft_collections: "infinex-patrons"
 polymarket_monitor:
     bot_name: "prediction"
-    interval_seconds: 150000
+    interval_seconds: 15
     market_ids: "983678,763535"
 twitter_monitor:
     bot_name: "x"
     interval_seconds: 10
-    usernames: "cz_binance,6551News"
+    usernames: "bwenews"
     quiet_hours:
         enabled: true
         start_hour: 0
         end_hour: 8
         behavior: "pause"
+    keywords:
+        bwenews: "Binance Alpha,Binance,UPBIT LISTING,elonmusk,马斯克,trump"
 coinglass:
     api_key: "YOUR_API_KEY_HERE"
 general_monitor:
     bot_name: "token"
-    interval_seconds: 3600
+    interval_seconds: 10
     modules: "token_price,polymarket"

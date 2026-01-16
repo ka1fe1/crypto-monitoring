@@ -17,8 +17,11 @@
 *   **Polymarket 预测市场监控** (`PolymarketMonitorTask`)
     *   监控 Polymarket 特定市场的概率变化与交易活动。
 *   **Twitter (X) 监控** (`TwitterMonitorTask`)
-    *   监控指定 Twitter 用户的最新推文 (推文、回复)。
+    *   监控指定 Twitter 用户的最新推文。
     *   支持解析 Snowflake ID 获取发推时间，提供更友好的日志与通知展示。
+    *   **关键词过滤支持**: 支持针对特定用户配置关键词 (Keywords) 过滤，仅推送包含特定关键词的推文。
+*   **Coinglass 数据集成** (`CoinGlass`)
+    *   集成 Coinglass API，支持获取 AHR999 指数（囤币指标）及加密货币恐慌与贪婪指数 (Fear & Greed Index)。
 
 ### 2. API 服务 (RESTful API)
 提供 HTTP 接口供外部系统集成，并集成了 **Swagger** 文档。
