@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
@@ -25,7 +26,8 @@ func NewTwitterService(client *twitter.TwitterClient) TwitterService {
 }
 
 func (s *twitterService) FetchNewTweets(username string, lastID string, keywords []string) ([]twitter.Tweet, string, error) {
-	query := fmt.Sprintf("from:%s within_time:%s", username, "2h")
+	nowUnix := time.Now().Unix()
+	query := fmt.Sprintf("from:%s since_time:%d", username, nowUnix)
 	if lastID != "" {
 		query = fmt.Sprintf("from:%s since_id:%s", username, lastID)
 	}
@@ -45,6 +47,8 @@ func (s *twitterService) FetchNewTweets(username string, lastID string, keywords
 		if t, err := utils.SnowflakeToTime(lastID); err == nil {
 			logQuery = fmt.Sprintf("%s (since: %s)", query, utils.FormatBJTime(t))
 		}
+	} else {
+		logQuery = fmt.Sprintf("%s (since: %s)", query, utils.FormatBJTime(time.Unix(nowUnix, 0)))
 	}
 
 	if len(resp.Tweets) == 0 {

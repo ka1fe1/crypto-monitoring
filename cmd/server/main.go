@@ -50,6 +50,9 @@ func main() {
 		return
 	}
 
+	// Setup Logger
+	logger.Setup(cfg.Log.Level)
+
 	// Initialize CoinMarketCap Client
 	cmcClient := utils.NewCoinMarketClient(cfg.CoinMarketCap.APIKey)
 
