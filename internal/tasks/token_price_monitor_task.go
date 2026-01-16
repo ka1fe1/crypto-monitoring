@@ -2,11 +2,11 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 )
@@ -80,42 +80,56 @@ func (t *TokenPriceMonitorTask) run() {
 
 	prices, err := t.tokenService.GetTokenPrice(t.tokenIds)
 	if err != nil {
-		log.Printf("Error fetching token prices: %v", err)
+		logger.Error("Error fetching token prices: %v", err)
 		return
 	}
 
-	var allTexts []string
-
-	var lastUpdated time.Time
-	for _, tokenId := range t.tokenIds {
-		tokenInfo, ok := prices[tokenId]
-		if !ok {
-			continue
-		}
-		if tokenInfo.LastUpdated.After(lastUpdated) {
-			lastUpdated = tokenInfo.LastUpdated
-		}
-		text := fmt.Sprintf(
-			"- **%s**: ***$%s*** (%.2f%%)\n",
-			tokenInfo.Symbol, utils.FormatPrice(tokenInfo.Price), tokenInfo.PercentChange1h)
-
-		allTexts = append(allTexts, text)
+	if len(prices) == 0 {
+		return
 	}
 
-	if len(allTexts) == 0 {
+	// This is using the detailed format which matches the previous logic
+	// But wait, the previous logic added newlines and joined with "\n---\n"
+	// TokenService.FormatTokenPricesDetailed does exactly that.
+	// But it returns the joined string, not the slice.
+	formatted, lastUpdated := t.formatTokenPricesDetailed(prices, t.tokenIds)
+
+	if formatted == "" {
 		return
 	}
 
 	// Aggregate messages
 	unifiedTitle := fmt.Sprintf("%s Price Alerts", t.dingBot.Keyword)
 
-	unifiedText := fmt.Sprintf("#### %s\n\n%s", unifiedTitle, strings.Join(allTexts, "\n---\n"))
+	unifiedText := fmt.Sprintf("#### %s\n\n%s", unifiedTitle, formatted)
 	unifiedText += fmt.Sprintf("\n\n---\n**Last Updated**: %s", utils.FormatBJTime(lastUpdated))
 
 	err = t.dingBot.SendMarkdown(unifiedTitle, unifiedText, nil, false)
 	if err != nil {
-		log.Printf("Error sending dingtalk message: %v", err)
+		logger.Error("Error sending dingtalk message: %v", err)
 	} else {
-		log.Printf("Sent batch token price alerts for %d tokens", len(allTexts))
+		logger.Info("Sent batch token price alerts")
 	}
+}
+
+// formatTokenPricesDetailed returns the format used by TokenPriceMonitorTask
+func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]utils.TokenInfo, tokenIds []string) (string, time.Time) {
+	var texts []string
+	var maxUpdated time.Time
+
+	for _, tokenId := range tokenIds {
+		tokenInfo, ok := prices[tokenId]
+		if !ok {
+			continue
+		}
+		if tokenInfo.LastUpdated.After(maxUpdated) {
+			maxUpdated = tokenInfo.LastUpdated
+		}
+		text := fmt.Sprintf(
+			"- **%s**: ***$%s*** (%.2f%%)\n",
+			tokenInfo.Symbol, utils.FormatPrice(tokenInfo.Price), tokenInfo.PercentChange1h)
+		texts = append(texts, text)
+	}
+
+	return strings.Join(texts, "\n---\n"), maxUpdated
 }

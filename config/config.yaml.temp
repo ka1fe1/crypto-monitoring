@@ -1,5 +1,7 @@
 server:
     port: "8080"
+log:
+    level: "debug"
 coinmarketcap:
     api_key: "YOUR_API_KEY_HERE"
 opensea:
@@ -9,10 +11,8 @@ twitter:
 dingtalk:
     "token":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
-        secret: "YOUR_SECRET_HERE"
     "dex-pair":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
-        secret: "YOUR_SECRET_HERE"
     "nft":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
     "prediction":
@@ -22,25 +22,25 @@ dingtalk:
 token_price_monitor:
     bot_name: "token"
     token_ids: "1,1027,1839,5426"
-    interval_seconds: 10
+    interval_seconds: 150000
 dex_pair_alter:
     bot_name: "dex-pair"
     contract_addrs:
         - "16: 2e3WeM4WwdEqwTtRnWN3gJSbhNg1P6Aj2y7kEdfrYbix"
         - "14: 0xb67e5eaf770a384ab28029d08b9bc5ebe32beb0f"
-    interval_seconds: 30
+    interval_seconds: 150000
 nft_floor_price_monitor:
     bot_name: "nft"
-    interval_seconds: 30
+    interval_seconds: 150000
     nft_collections: "infinex-patrons"
 polymarket_monitor:
     bot_name: "prediction"
-    interval_seconds: 15
+    interval_seconds: 150000
     market_ids: "983678,763535"
 twitter_monitor:
     bot_name: "x"
     interval_seconds: 10
-    usernames: "cz_binance,heyibinance"
+    usernames: "cz_binance,6551News"
     quiet_hours:
         enabled: true
         start_hour: 0
@@ -48,3 +48,7 @@ twitter_monitor:
         behavior: "pause"
 coinglass:
     api_key: "YOUR_API_KEY_HERE"
+general_monitor:
+    bot_name: "token"
+    interval_seconds: 3600
+    modules: "token_price,polymarket"

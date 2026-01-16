@@ -1,10 +1,9 @@
 package tasks
 
 import (
-	"log"
-
 	"github.com/ka1fe1/crypto-monitoring/config"
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
@@ -21,6 +20,10 @@ func InitTasks(
 	polyClient *polymarket.Client,
 	twitterClient *twitter.TwitterClient,
 ) {
+	// Create services
+	twitterMonitorService := service.NewTwitterMonitorService(twitterClient)
+	polymarketService := service.NewPolymarketMonitorService(polyClient)
+
 	// 1. DexPairAlterTask
 	if cfg.DexPairAlter.IntervalSeconds > 0 {
 		dexBot := dingBots[cfg.DexPairAlter.BotName]
@@ -40,7 +43,7 @@ func InitTasks(
 			}
 			NewDexPairAlterTask(dexService, dexBot, cfg.DexPairAlter.ContractAddrInfo, cfg.DexPairAlter.IntervalSeconds, qh).Start()
 		} else {
-			log.Printf("Warning: Bot %s not found for DexPairAlterTask", cfg.DexPairAlter.BotName)
+			logger.Warn("Warning: Bot %s not found for DexPairAlterTask", cfg.DexPairAlter.BotName)
 		}
 	}
 
@@ -63,7 +66,7 @@ func InitTasks(
 			}
 			NewTokenPriceMonitorTask(tokenService, tokenBot, cfg.TokenPriceMonitor.TokenIds, cfg.TokenPriceMonitor.IntervalSeconds, qh).Start()
 		} else {
-			log.Printf("Warning: Bot %s not found for TokenPriceMonitorTask", cfg.TokenPriceMonitor.BotName)
+			logger.Warn("Warning: Bot %s not found for TokenPriceMonitorTask", cfg.TokenPriceMonitor.BotName)
 		}
 	}
 
@@ -86,7 +89,7 @@ func InitTasks(
 			}
 			NewNFTFloorPriceMonitorTask(openSeaService, nftBot, cfg.NFTFloorPriceMonitor.NFTCollections, cfg.NFTFloorPriceMonitor.IntervalSeconds, qh).Start()
 		} else {
-			log.Printf("Warning: Bot %s not found for NFTFloorPriceMonitorTask", cfg.NFTFloorPriceMonitor.BotName)
+			logger.Warn("Warning: Bot %s not found for NFTFloorPriceMonitorTask", cfg.NFTFloorPriceMonitor.BotName)
 		}
 	}
 
@@ -107,9 +110,9 @@ func InitTasks(
 				// Default: Pause during 00:00-08:00
 				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
 			}
-			NewPolymarketMonitorTask(polyClient, polyBot, cfg.PolymarketMonitor.MarketIDs, cfg.PolymarketMonitor.IntervalSeconds, qh).Start()
+			NewPolymarketMonitorTask(polymarketService, polyBot, cfg.PolymarketMonitor.MarketIDs, cfg.PolymarketMonitor.IntervalSeconds, qh).Start()
 		} else {
-			log.Printf("Warning: Bot %s not found for PolymarketMonitorTask", cfg.PolymarketMonitor.BotName)
+			logger.Warn("Warning: Bot %s not found for PolymarketMonitorTask", cfg.PolymarketMonitor.BotName)
 		}
 	}
 
@@ -130,9 +133,42 @@ func InitTasks(
 				// Default: Pause during 00:00-07:00
 				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
 			}
-			NewTwitterMonitorTask(twitterClient, twitterBot, cfg.TwitterMonitor.Usernames, cfg.TwitterMonitor.IntervalSeconds, qh).Start()
+			NewTwitterMonitorTask(twitterMonitorService, twitterBot, cfg.TwitterMonitor.Usernames, cfg.TwitterMonitor.IntervalSeconds, qh).Start()
 		} else {
-			log.Printf("Warning: Bot %s not found for TwitterMonitorTask", cfg.TwitterMonitor.BotName)
+			logger.Warn("Warning: Bot %s not found for TwitterMonitorTask", cfg.TwitterMonitor.BotName)
+		}
+	}
+
+	// 6. GeneralMonitorTask
+	if cfg.GeneralMonitor.IntervalSeconds > 0 {
+		generalBot := dingBots[cfg.GeneralMonitor.BotName]
+		if generalBot != nil {
+			var qh utils.QuietHoursParams
+			if cfg.GeneralMonitor.QuietHours != nil {
+				qh = utils.QuietHoursParams{
+					Enabled:            cfg.GeneralMonitor.QuietHours.Enabled,
+					StartHour:          cfg.GeneralMonitor.QuietHours.StartHour,
+					EndHour:            cfg.GeneralMonitor.QuietHours.EndHour,
+					Behavior:           cfg.GeneralMonitor.QuietHours.Behavior,
+					ThrottleMultiplier: cfg.GeneralMonitor.QuietHours.ThrottleMultiplier,
+				}
+			} else {
+				// Default: Pause during 00:00-07:00
+				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_THROTTLE, ThrottleMultiplier: 5}
+			}
+
+			NewGeneralMonitorTask(
+				tokenService,
+				polymarketService,
+				generalBot,
+				cfg.GeneralMonitor.Modules,
+				cfg.TokenPriceMonitor.TokenIDs,
+				cfg.PolymarketMonitor.MarketIDs,
+				cfg.GeneralMonitor.IntervalSeconds,
+				qh,
+			).Start()
+		} else {
+			logger.Warn("Warning: Bot %s not found for GeneralMonitorTask", cfg.GeneralMonitor.BotName)
 		}
 	}
 }

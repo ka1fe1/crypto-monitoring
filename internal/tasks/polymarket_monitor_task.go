@@ -2,17 +2,18 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/ka1fe1/crypto-monitoring/internal/service"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 )
 
 type PolymarketMonitorTask struct {
-	client           *polymarket.Client
+	service          service.PolymarketMonitorService
 	dingBot          *dingding.DingBot
 	ticker           *time.Ticker
 	stop             chan bool
@@ -22,14 +23,14 @@ type PolymarketMonitorTask struct {
 	lastRunTime      time.Time
 }
 
-func NewPolymarketMonitorTask(client *polymarket.Client, dingBot *dingding.DingBot, marketIDs []string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *PolymarketMonitorTask {
+func NewPolymarketMonitorTask(service service.PolymarketMonitorService, dingBot *dingding.DingBot, marketIDs []string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *PolymarketMonitorTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 3600 * time.Second
 	}
 
 	return &PolymarketMonitorTask{
-		client:           client,
+		service:          service,
 		dingBot:          dingBot,
 		stop:             make(chan bool),
 		marketIDs:        marketIDs,
@@ -41,7 +42,7 @@ func NewPolymarketMonitorTask(client *polymarket.Client, dingBot *dingding.DingB
 
 func (t *PolymarketMonitorTask) Start() {
 	t.ticker = time.NewTicker(t.interval)
-	log.Printf("Starting Polymarket Monitor Task with interval %v, monitoring %d markets", t.interval, len(t.marketIDs))
+	logger.Info("Starting Polymarket Monitor Task with interval %v, monitoring %d markets", t.interval, len(t.marketIDs))
 	go func() {
 		for {
 			select {
@@ -65,25 +66,52 @@ func (t *PolymarketMonitorTask) run() {
 	}
 
 	if !utils.ShouldExecTask(t.quietHoursParams, t.lastRunTime, t.interval) {
-		log.Printf("Skipping Polymarket Monitor Task for %s in quiet hours", t.dingBot.Keyword)
+		logger.Info("Skipping Polymarket Monitor Task for %s in quiet hours", t.dingBot.Keyword)
 		return
 	}
 	t.lastRunTime = time.Now()
 
-	var allTexts []string
-	for _, id := range t.marketIDs {
-		market, err := t.client.GetMarketDetail(id)
-		if err != nil {
-			log.Printf("Error fetching Polymarket detail for ID %s: %v", id, err)
-			continue
-		}
+	markets, err := t.service.GetMarketDetails(t.marketIDs)
+	if err != nil {
+		logger.Error("Error fetching Polymarket details: %v", err)
+	}
 
-		// Skip closed markets
+	if len(markets) == 0 {
+		return
+	}
+
+	if len(markets) == 0 {
+		return
+	}
+
+	content := t.formatMarkets(markets)
+	if content == "" {
+		return
+	}
+
+	title := fmt.Sprintf("%s Polymarket Monitor", t.dingBot.Keyword)
+	// We need to construct the full markdown like before
+	fullContent := fmt.Sprintf("## %s\n\n --- \n\n%s\n\n---\n**Last Updated**: %s",
+		title,
+		content,
+		utils.FormatBJTime(time.Now()),
+	)
+
+	err = t.dingBot.SendMarkdown(title, fullContent, nil, false)
+	if err != nil {
+		logger.Error("Error sending DingTalk message for Polymarket monitor: %v", err)
+	} else {
+		logger.Info("Sent Polymarket monitor update for %d markets", len(markets))
+	}
+}
+
+func (t *PolymarketMonitorTask) formatMarkets(markets []polymarket.MarketDetail) string {
+	var texts []string
+	for _, market := range markets {
 		if market.Closed {
 			continue
 		}
 
-		// Build price string: Yes: 0.75, No: 0.25
 		prices := []string{}
 		for name, price := range market.OutcomePrices {
 			prices = append(prices, fmt.Sprintf("%s: %s", name, utils.FormatPrice(price)))
@@ -100,27 +128,9 @@ func (t *PolymarketMonitorTask) run() {
 			strings.Join(prices, " | "),
 			utils.FormatPrice(market.OneHourPriceChange*100),
 		)
-
-		allTexts = append(allTexts, text)
+		texts = append(texts, text)
 	}
-
-	if len(allTexts) == 0 {
-		return
-	}
-
-	title := fmt.Sprintf("%s Polymarket Monitor", t.dingBot.Keyword)
-	content := fmt.Sprintf("## %s\n\n --- \n\n%s\n\n---\n**Last Updated**: %s",
-		title,
-		strings.Join(allTexts, "\n\n---\n\n"),
-		utils.FormatBJTime(time.Now()),
-	)
-
-	err := t.dingBot.SendMarkdown(title, content, nil, false)
-	if err != nil {
-		log.Printf("Error sending DingTalk message for Polymarket monitor: %v", err)
-	} else {
-		log.Printf("Sent Polymarket monitor update for %d markets", len(allTexts))
-	}
+	return strings.Join(texts, "\n\n---\n\n")
 }
 
 func (t *PolymarketMonitorTask) getClosedStr(closed bool) string {

@@ -2,13 +2,13 @@ package twitter
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 )
 
@@ -45,7 +45,7 @@ func TestMain(m *testing.M) {
 	var err error
 	cfg, err = loadTestConfig()
 	if err != nil {
-		log.Printf("Warning: Could not load config: %v", err)
+		logger.Warn("Warning: Could not load config: %v", err)
 	}
 
 	apiKey := ""

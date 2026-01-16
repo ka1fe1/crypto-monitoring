@@ -2,9 +2,10 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
+
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
@@ -71,7 +72,7 @@ func (t *NFTFloorPriceMonitorTask) run() {
 	// Fetch prices with USD conversion enabled
 	prices, err := t.openSeaService.GetNFTFloorPrices(t.collections, true)
 	if err != nil {
-		log.Printf("Error fetching NFT floor prices: %v", err)
+		logger.Error("Error fetching NFT floor prices: %v", err)
 		return
 	}
 
@@ -104,8 +105,8 @@ func (t *NFTFloorPriceMonitorTask) run() {
 
 	err = t.dingBot.SendMarkdown(unifiedTitle, unifiedText, nil, false)
 	if err != nil {
-		log.Printf("Error sending dingtalk message for NFT alerts: %v", err)
+		logger.Error("Error sending dingtalk message for NFT alerts: %v", err)
 	} else {
-		log.Printf("Sent batch NFT floor price alerts for %d collections", len(allTexts))
+		logger.Info("Sent batch NFT floor price alerts for %d collections", len(allTexts))
 	}
 }

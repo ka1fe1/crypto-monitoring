@@ -2,19 +2,18 @@ package tasks
 
 import (
 	"fmt"
-	"log"
-	"sort"
-	"strings"
 	"sync"
 	"time"
 
+	"github.com/ka1fe1/crypto-monitoring/internal/service"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/twitter"
 )
 
 type TwitterMonitorTask struct {
-	client           *twitter.TwitterClient
+	twitterService   service.TwitterMonitorService
 	dingBot          *dingding.DingBot
 	ticker           *time.Ticker
 	stop             chan bool
@@ -26,14 +25,14 @@ type TwitterMonitorTask struct {
 	lastRunTime      time.Time
 }
 
-func NewTwitterMonitorTask(client *twitter.TwitterClient, dingBot *dingding.DingBot, usernames []string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TwitterMonitorTask {
+func NewTwitterMonitorTask(twitterService service.TwitterMonitorService, dingBot *dingding.DingBot, usernames []string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TwitterMonitorTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 600 * time.Second // Default 10 minutes
 	}
 
 	return &TwitterMonitorTask{
-		client:           client,
+		twitterService:   twitterService,
 		dingBot:          dingBot,
 		stop:             make(chan bool),
 		usernames:        usernames,
@@ -46,7 +45,7 @@ func NewTwitterMonitorTask(client *twitter.TwitterClient, dingBot *dingding.Ding
 
 func (t *TwitterMonitorTask) Start() {
 	t.ticker = time.NewTicker(t.interval)
-	log.Printf("Starting Twitter Monitor Task with interval %v, monitoring %d accounts", t.interval, len(t.usernames))
+	logger.Info("Starting Twitter Monitor Task with interval %v, monitoring %d accounts", t.interval, len(t.usernames))
 
 	// Run immediately on start
 	go t.run()
@@ -75,7 +74,7 @@ func (t *TwitterMonitorTask) run() {
 
 	// Check for Quiet Hours
 	if !utils.ShouldExecTask(t.quietHoursParams, t.lastRunTime, t.interval) {
-		log.Printf("Skipping Twitter Monitor Task for %s in quiet hours", t.dingBot.Keyword)
+		logger.Info("Skipping Twitter Monitor Task for %s in quiet hours", t.dingBot.Keyword)
 		return
 	}
 	t.lastRunTime = time.Now()
@@ -90,58 +89,10 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 	lastID := t.lastTweetIDs[username]
 	t.lastTweetLock.RUnlock()
 
-	query := fmt.Sprintf("from:%s within_time:%s", username, "2h")
-	if lastID != "" {
-		query = fmt.Sprintf("from:%s since_id:%s", username, lastID)
-	}
-
-	req := twitter.AdvancedSearchRequest{
-		Query: query,
-	}
-
-	resp, err := t.client.Search(req)
+	newTweets, newestID, err := t.twitterService.FetchNewTweets(username, lastID)
 	if err != nil {
-		log.Printf("Error searching tweets, %s: %v", t.formatQueryForLog(req.Query, lastID), err)
+		logger.Error("Error searching tweets for %s: %v", username, err)
 		return
-	}
-
-	if len(resp.Tweets) == 0 {
-		log.Printf("No new tweets, %s", t.formatQueryForLog(req.Query, lastID))
-		return
-	}
-
-	// Filter tweets to only those from the specified user
-	var filteredTweets []twitter.Tweet
-	for _, t := range resp.Tweets {
-		if strings.EqualFold(t.AuthorHandle, username) {
-			filteredTweets = append(filteredTweets, t)
-		}
-	}
-
-	if len(filteredTweets) == 0 {
-		log.Printf("No tweets, query: %s found in results (filtered out mentions)", t.formatQueryForLog(req.Query, lastID))
-		return
-	} else {
-		log.Printf("Found %d tweets, query: %s", len(filteredTweets), t.formatQueryForLog(req.Query, lastID))
-	}
-
-	// Sort filtered tweets by ID descending (Newest first) to ensure correct processing
-	// Twitter IDs are snowflake (time-ordered), so string comparison works if lengths are consistent.
-	// We'll trust the string comparison for standard Twitter IDs.
-	sort.Slice(filteredTweets, func(i, j int) bool {
-		return filteredTweets[i].ID > filteredTweets[j].ID
-	})
-
-	// Update newestID to the newest tweet from the USER
-	newestID := filteredTweets[0].ID
-
-	// Notify for new tweets
-	var newTweets []twitter.Tweet
-	for _, tweet := range filteredTweets {
-		// Only collect tweets strictly newer than lastID
-		if lastID == "" || tweet.ID > lastID {
-			newTweets = append(newTweets, tweet)
-		}
 	}
 
 	if len(newTweets) > 0 {
@@ -155,9 +106,27 @@ func (t *TwitterMonitorTask) monitorUser(username string) {
 
 func (t *TwitterMonitorTask) notifyTweets(username string, tweets []twitter.Tweet) {
 	title := fmt.Sprintf("%s [%s] New Tweets", t.dingBot.Keyword, username)
+
+	content := t.formatTweets(tweets)
+
+	allTexts := fmt.Sprintf("## %s\n\n --- \n\n%s\n\n---\n**Last Updated**: %s",
+		title,
+		content,
+		utils.FormatBJTime(time.Now()),
+	)
+
+	err := t.dingBot.SendMarkdown(title, allTexts, nil, false)
+	if err != nil {
+		logger.Error("Error sending DingTalk notification for %s: %v", username, err)
+	} else {
+		logger.Info("Notified %d new tweets for %s", len(tweets), username)
+	}
+}
+
+func (t *TwitterMonitorTask) formatTweets(tweets []twitter.Tweet) string {
 	var content string
 
-	// Display newest first
+	// Display newest first (presumed sorted)
 	for i := 0; i < len(tweets); i++ {
 		tweet := tweets[i]
 		isReplyStr := "No"
@@ -176,27 +145,5 @@ func (t *TwitterMonitorTask) notifyTweets(username string, tweets []twitter.Twee
 			content += "--- \n\n"
 		}
 	}
-
-	allTexts := fmt.Sprintf("## %s\n\n --- \n\n%s\n\n---\n**Last Updated**: %s",
-		title,
-		content,
-		utils.FormatBJTime(time.Now()),
-	)
-
-	err := t.dingBot.SendMarkdown(title, allTexts, nil, false)
-	if err != nil {
-		log.Printf("Error sending DingTalk notification for %s: %v", username, err)
-	} else {
-		log.Printf("Notified %d new tweets for %s", len(tweets), username)
-	}
-}
-
-func (t *TwitterMonitorTask) formatQueryForLog(query string, lastID string) string {
-	res := fmt.Sprintf("query: %s", query)
-	if lastID != "" {
-		if st, err := utils.SnowflakeToTime(lastID); err == nil {
-			res += fmt.Sprintf(" (since %s)", utils.FormatBJTime(st))
-		}
-	}
-	return res
+	return content
 }

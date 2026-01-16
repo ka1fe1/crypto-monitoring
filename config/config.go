@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 
 	"strings"
 
@@ -23,6 +25,12 @@ type Config struct {
 	PolymarketMonitor    PolymarketMonitorConfig    `yaml:"polymarket_monitor"`
 	Twitter              TwitterConfig              `yaml:"twitter"`
 	TwitterMonitor       TwitterMonitorConfig       `yaml:"twitter_monitor"`
+	GeneralMonitor       GeneralMonitorConfig       `yaml:"general_monitor"`
+	Log                  LogConfig                  `yaml:"log"`
+}
+
+type LogConfig struct {
+	Level string `yaml:"level"` // "debug", "info", "warn", "error"
 }
 
 type ServerConfig struct {
@@ -54,6 +62,7 @@ type DexPairAlterConfig struct {
 
 type TokenPriceMonitorConfig struct {
 	TokenIds        string            `yaml:"token_ids"`
+	TokenIDs        []string          `yaml:"-"`
 	IntervalSeconds int               `yaml:"interval_seconds"`
 	BotName         string            `yaml:"bot_name"`
 	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
@@ -109,6 +118,14 @@ type QuietHoursConfig struct {
 	ThrottleMultiplier int    `yaml:"throttle_multiplier"`
 }
 
+type GeneralMonitorConfig struct {
+	IntervalSeconds int               `yaml:"interval_seconds"`
+	BotName         string            `yaml:"bot_name"`
+	ModulesStr      string            `yaml:"modules"`
+	Modules         []string          `yaml:"-"`
+	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
+}
+
 func LoadConfig(path string) (*Config, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -155,6 +172,17 @@ func LoadConfig(path string) (*Config, error) {
 		}
 	}
 
+	// Parse GeneralMonitor Modules
+	if cfg.GeneralMonitor.ModulesStr != "" {
+		parts := strings.Split(cfg.GeneralMonitor.ModulesStr, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.GeneralMonitor.Modules = append(cfg.GeneralMonitor.Modules, trimmed)
+			}
+		}
+	}
+
 	// Parse ContractAddrInfo
 	cfg.DexPairAlter.ContractAddrInfo = make(map[string][]string)
 	for _, entry := range cfg.DexPairAlter.ContractAddrs {
@@ -171,10 +199,31 @@ func LoadConfig(path string) (*Config, error) {
 		}
 	}
 
+	// Parse TokenPriceMonitor TokenIds
+	if cfg.TokenPriceMonitor.TokenIds != "" {
+		parts := strings.Split(cfg.TokenPriceMonitor.TokenIds, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.TokenPriceMonitor.TokenIDs = append(cfg.TokenPriceMonitor.TokenIDs, trimmed)
+			}
+		}
+	}
+
 	// set keyword equal to bot name
 	for botName, v := range cfg.DingTalk {
 		v.Keyword = botName
 		cfg.DingTalk[botName] = v
 	}
 	return &cfg, nil
+}
+
+func GetConfigPath() string {
+	_, filename, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(filename), "config.yaml")
+}
+
+func GetConfigTempPath() string {
+	_, filename, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(filename), "config.yaml.temp")
 }

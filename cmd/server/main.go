@@ -11,6 +11,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/internal/api/routers"
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
 	"github.com/ka1fe1/crypto-monitoring/internal/tasks"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/opensea"
@@ -45,7 +46,8 @@ func main() {
 
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		logger.Error("Failed to load config: %v", err)
+		return
 	}
 
 	// Initialize CoinMarketCap Client

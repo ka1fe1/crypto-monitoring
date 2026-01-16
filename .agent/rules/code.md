@@ -2,6 +2,9 @@
 trigger: always_on
 ---
 
+# 语言
+所有的响应，请使用中文回答
+
 # 工具类的写法要求
 
 1. `/pkg/utils` 目录下写对应的工具类，其中需要新建文件夹，如需要新建一个 `polymarket` 的工具类，则需要在新建的 `/pkg/utils/polymarket` 文件夹下，新建 `ploymarket.go` 文件
@@ -58,9 +61,10 @@ func TestMain(m *testing.M) {
 }
 ```
 
-# 监控 task 的写法要求
+2. 单元测试中不应使用 `defaultMockTransport` 或其他形式的 HTTP Transport 模拟。应直接使用真实配置与外部服务交互。
 
-1. 文件名以 `xx_monitor_task`，如 `polymarket_monitor_task`
-2. monitor task 所需要的配置，需从 `config/config.go` 中读取，即需要先配置相关的配置项
-3. monitor task 也需要写对应的单元测试
+# 监控 task 和 service 的写法要求
 
+1. 文件名以 `xx_monitor_task` 或 `xx_service`，如 `polymarket_monitor_task`, `polymarket_service`
+2. monitor task 和 service 所需要的配置，需从 `config/config.go` 中读取，即需要先配置相关的配置项
+3. monitor task 和 service 也需要写对应的单元测试，单元测试遵循上面单元测试的写法要求

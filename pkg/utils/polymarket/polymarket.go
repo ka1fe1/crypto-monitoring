@@ -27,6 +27,10 @@ func NewClient(apiKey string) *Client {
 	}
 }
 
+func (c *Client) SetHttpClient(client *http.Client) {
+	c.httpClient = client
+}
+
 func (c *Client) GetMarketDetail(marketID string) (*MarketDetail, error) {
 	body, err := c.fetchMarketRaw(marketID)
 	if err != nil {

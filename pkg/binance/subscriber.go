@@ -6,13 +6,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 )
 
 const (
@@ -73,7 +73,7 @@ func (s *CmsSubscriber) Connect(topics []string) error {
 
 	u.RawQuery = values.Encode()
 
-	log.Printf("Connecting to %s", u.String())
+	logger.Info("Connecting to %s", u.String())
 
 	// Set API Key in headers
 	headers := http.Header{}
@@ -121,7 +121,7 @@ func (s *CmsSubscriber) listen(handler func([]byte)) {
 	for {
 		_, message, err := s.conn.ReadMessage()
 		if err != nil {
-			log.Println("read:", err)
+			logger.Error("read: %v", err)
 			return
 		}
 		handler(message)
@@ -187,7 +187,7 @@ func (s *CmsSubscriber) Run(ctx context.Context, topics []string, handler func([
 			return
 		default:
 			if err := s.Connect(topics); err != nil {
-				log.Printf("Failed to connect: %v, retrying in 5s...", err)
+				logger.Warn("Failed to connect: %v, retrying in 5s...", err)
 				time.Sleep(5 * time.Second)
 				continue
 			}
@@ -204,7 +204,9 @@ func (s *CmsSubscriber) Run(ctx context.Context, topics []string, handler func([
 						return
 					case <-ticker.C:
 						if err := s.Ping(); err != nil {
-							log.Printf("Ping failed: %v", err)
+							logger.Error("Ping failed: %v", err)
+							// Trigger reconnect by closing connection if ping fails multiple times?
+							// For now, let read loop handle error if connection drops
 							s.Close()
 							return
 						}
@@ -212,9 +214,9 @@ func (s *CmsSubscriber) Run(ctx context.Context, topics []string, handler func([
 				}
 			}()
 
-			log.Println("Connected to Binance CEX")
+			logger.Info("Connected to Binance CEX")
 			s.listen(handler)
-			log.Println("Connection lost, reconnecting...")
+			logger.Info("Connection lost, reconnecting...")
 			s.Close()
 			time.Sleep(1 * time.Second)
 		}

@@ -2,13 +2,13 @@ package utils
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 )
 
@@ -39,7 +39,7 @@ func TestMain(m *testing.M) {
 	// Load the configuration using the helper method
 	cfg, err := loadTestConfig()
 	if err != nil {
-		log.Printf("Warning: Could not load config: %v", err)
+		logger.Warn("Warning: Could not load config: %v", err)
 	}
 
 	// Initialize the client if config was loaded successfully

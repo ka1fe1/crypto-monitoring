@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -13,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 )
 
@@ -44,7 +44,7 @@ func TestMain(m *testing.M) {
 	var err error
 	cfg, err = loadTestConfig()
 	if err != nil {
-		log.Printf("Warning: Could not load config: %v", err)
+		logger.Warn("Warning: Could not load config: %v", err)
 	}
 
 	var token, secret, keyword string

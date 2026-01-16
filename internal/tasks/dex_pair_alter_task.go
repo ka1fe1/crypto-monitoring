@@ -2,11 +2,11 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 )
@@ -72,7 +72,7 @@ func (t *DexPairAlterTask) run() {
 
 		infos, err := t.dexService.GetDexPairInfo(addrs, "", networkId)
 		if err != nil {
-			log.Printf("Error fetching dex pair info for network %s: %v", networkId, err)
+			logger.Error("Error fetching dex pair info for network %s: %v", networkId, err)
 			continue
 		}
 
@@ -104,9 +104,9 @@ func (t *DexPairAlterTask) run() {
 
 	err := t.dingBot.SendMarkdown(unifiedTitle, unifiedText, nil, false)
 	if err != nil {
-		log.Printf("Error sending dingtalk message: %v", err)
+		logger.Error("Error sending dingtalk message: %v", err)
 	} else {
-		log.Printf("Sent batch price alerts for %d pairs", len(allTexts))
+		logger.Info("Sent batch price alerts for %d pairs", len(allTexts))
 	}
 }
 
