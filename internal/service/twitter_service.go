@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
@@ -26,8 +25,7 @@ func NewTwitterService(client *twitter.TwitterClient) TwitterService {
 }
 
 func (s *twitterService) FetchNewTweets(username string, lastID string, keywords []string) ([]twitter.Tweet, string, error) {
-	nowUnix := time.Now().Unix()
-	query := fmt.Sprintf("from:%s since_time:%d", username, nowUnix)
+	query := fmt.Sprintf("from:%s within_time:%s", username, "2h")
 	if lastID != "" {
 		query = fmt.Sprintf("from:%s since_id:%s", username, lastID)
 	}
@@ -47,15 +45,6 @@ func (s *twitterService) FetchNewTweets(username string, lastID string, keywords
 		if t, err := utils.SnowflakeToTime(lastID); err == nil {
 			logQuery = fmt.Sprintf("%s (since: %s)", query, utils.FormatBJTime(t))
 		}
-	} else {
-		logQuery = fmt.Sprintf("%s (since: %s)", query, utils.FormatBJTime(time.Unix(nowUnix, 0)))
-	}
-
-	if len(resp.Tweets) == 0 {
-		logger.Debug("No new tweets found, %s", logQuery)
-		return nil, "", nil
-	} else {
-		logger.Debug("Found %d tweets, query: %s", len(resp.Tweets), logQuery)
 	}
 
 	// Step 1: Filter tweets to only those from the specified user
@@ -67,8 +56,10 @@ func (s *twitterService) FetchNewTweets(username string, lastID string, keywords
 	}
 
 	if len(userTweets) == 0 {
-		logger.Info("No tweets found for query %s from user %s", logQuery, username)
+		logger.Info("No tweets found, %s", logQuery)
 		return nil, "", nil
+	} else {
+		logger.Info("Found %d tweets, %s", len(userTweets), logQuery)
 	}
 
 	// Step 2: Sort all user tweets by ID descending (Newest first) to determine newestID
