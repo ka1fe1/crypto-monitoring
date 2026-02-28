@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -178,9 +179,15 @@ func (t *GeneralMonitorTask) formatPolymarketMarkets(markets []polymarket.Market
 			continue
 		}
 
-		prices := []string{}
-		for name, price := range market.OutcomePrices {
-			prices = append(prices, fmt.Sprintf("%s: %s", name, utils.FormatPrice(price)))
+		names := make([]string, 0, len(market.OutcomePrices))
+		for name := range market.OutcomePrices {
+			names = append(names, name)
+		}
+		sort.Sort(sort.Reverse(sort.StringSlice(names)))
+
+		prices := make([]string, 0, len(names))
+		for _, name := range names {
+			prices = append(prices, fmt.Sprintf("%s: %s", name, utils.FormatPrice(market.OutcomePrices[name])))
 		}
 
 		text := fmt.Sprintf(

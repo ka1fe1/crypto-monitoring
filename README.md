@@ -71,7 +71,7 @@ docker run -d \
   --name crypto-monitoring \
   -v $(pwd)/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -p 8080:8080 \
-  tataka1takes2/crypto-monitoring:2601161604
+  tataka1takes2/crypto-monitoring:2601161628
 ```
 
 #### 3. 常用命令
@@ -88,7 +88,7 @@ docker run -d \
 
 *   **拉取**
     ```bash
-    docker pull tataka1takes2/crypto-monitoring:2601161604
+    docker pull tataka1takes2/crypto-monitoring:2601161628
     ```
 
 *   **删除容器**
