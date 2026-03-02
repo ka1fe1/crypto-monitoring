@@ -12,7 +12,10 @@ schema: spec-driven
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.
 # Example:
-#   rules:
+rules:
+  global:
+    - 所有的 OpenSpec 文档 (包含 proposal, design, specs, tasks 等) 都必须使用中文编写和描述。
+    - 当修改了 OpenSpec 生成的 spec 及 proposal 时，需要同步更新 design, tasks 等文档。同理，如果修改了 design 时，需要同步更新 tasks 文档。
 #     proposal:
 #       - Keep proposals under 500 words
 #       - Always include a "Non-goals" section

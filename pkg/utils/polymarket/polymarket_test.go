@@ -77,3 +77,69 @@ func TestGetMarketDetail(t *testing.T) {
 
 	t.Log(utils.PrintJson(market))
 }
+
+func TestGetTraderLeaderboardRankings(t *testing.T) {
+	// Our client uses a hardcoded BaseURL, so we can't easily swap it with httptest.NewServer.
+	// But since this is just a unit test and we already have a real API key, we can test it live with a known address
+	// or we can just test if the endpoint parses correctly. Let's do a live test for a dummy address,
+	// or just skip if it works. Here we'll do a live test for a common address or just check for no-error on zero volume.
+
+	address := "0xfe9b5b2109a59138e4e645167a8384aa420dcb15"
+	res, err := client.GetTraderLeaderboardRankings(address)
+	if err != nil {
+		t.Fatalf("Failed to GetTraderLeaderboardRankings: %v", err)
+	}
+
+	if res == nil {
+		t.Fatal("LeaderboardResponse is nil")
+	}
+
+	t.Log(utils.PrintJson(res))
+
+}
+
+func TestGetTotalValueOfUserPositions(t *testing.T) {
+	address := "0xfe9b5b2109a59138e4e645167a8384aa420dcb15"
+	res, err := client.GetTotalValueOfUserPositions(address)
+	if err != nil {
+		t.Fatalf("Failed to GetTotalValueOfUserPositions: %v", err)
+	}
+
+	if res == nil {
+		t.Fatal("TotalValueResponse is nil")
+	}
+
+	t.Log(utils.PrintJson(res))
+
+	t.Logf("Total Value for %s: %v", address, res.Value)
+}
+
+func TestGetCurrentPositionsForUser(t *testing.T) {
+	address := "0x11b6916fe7212b596e093d631d0d30ea80b1971d"
+	res, err := client.GetCurrentPositionsForUser(address)
+	if err != nil {
+		t.Fatalf("Failed to GetCurrentPositionsForUser: %v", err)
+	}
+
+	if res == nil {
+		t.Fatal("CurrentPositionsResponse is nil")
+	}
+
+	t.Logf("Current Positions for %s: %v items", address, len(*res))
+	t.Log(utils.PrintJson(*res))
+}
+
+func TestResolveProxyWallet(t *testing.T) {
+	// EOA address -> should resolve to proxyWallet
+	address := "0xfbdcc3c6469b21c273517a971aa08400f272e514"
+	proxyWallet, err := client.ResolveProxyWallet(address)
+	if err != nil {
+		t.Fatalf("Failed to ResolveProxyWallet: %v", err)
+	}
+
+	if proxyWallet == "" {
+		t.Fatal("proxyWallet is empty")
+	}
+
+	t.Logf("EOA %s -> proxyWallet %s", address, proxyWallet)
+}

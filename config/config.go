@@ -23,6 +23,7 @@ type Config struct {
 	CoinGlass            CoinGlassConfig            `yaml:"coinglass"`
 	Polymarket           PolymarketConfig           `yaml:"polymarket"`
 	PolymarketMonitor    PolymarketMonitorConfig    `yaml:"polymarket_monitor"`
+	PolymarketReport     PolymarketReportConfig     `yaml:"polymarket_report"`
 	Twitter              TwitterConfig              `yaml:"twitter"`
 	TwitterMonitor       TwitterMonitorConfig       `yaml:"twitter_monitor"`
 	GeneralMonitor       GeneralMonitorConfig       `yaml:"general_monitor"`
@@ -88,6 +89,11 @@ type CoinGlassConfig struct {
 
 type PolymarketConfig struct {
 	APIKey string `yaml:"api_key"`
+}
+
+type PolymarketReportConfig struct {
+	AddressListFile string `yaml:"address_list_file"`
+	OutputDir       string `yaml:"output_dir"`
 }
 
 type TwitterConfig struct {
@@ -233,6 +239,18 @@ func LoadConfig(path string) (*Config, error) {
 		v.Keyword = botName
 		cfg.DingTalk[botName] = v
 	}
+
+	// Resolve relative paths in PolymarketReport to be relative to project root.
+	// Config file is at <project_root>/config/config.yaml, so project root = parent of config dir.
+	configDir := filepath.Dir(path)        // <project_root>/config
+	projectRoot := filepath.Dir(configDir) // <project_root>
+	if cfg.PolymarketReport.AddressListFile != "" && !filepath.IsAbs(cfg.PolymarketReport.AddressListFile) {
+		cfg.PolymarketReport.AddressListFile = filepath.Join(projectRoot, cfg.PolymarketReport.AddressListFile)
+	}
+	if cfg.PolymarketReport.OutputDir != "" && !filepath.IsAbs(cfg.PolymarketReport.OutputDir) {
+		cfg.PolymarketReport.OutputDir = filepath.Join(projectRoot, cfg.PolymarketReport.OutputDir)
+	}
+
 	return &cfg, nil
 }
 

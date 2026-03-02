@@ -84,3 +84,39 @@ type MarketDetail struct {
 	OneHourPriceChange float64            `json:"one_hour_price_change"`
 	OneWeekPriceChange float64            `json:"one_week_price_change"`
 }
+
+// LeaderboardResponse represents a single trader's leaderboard data
+type LeaderboardResponse struct {
+	Rank        string  `json:"rank"`
+	ProxyWallet string  `json:"proxyWallet"`
+	Vol         float64 `json:"vol"`
+	Pnl         float64 `json:"pnl"`
+}
+
+// TotalValueResponse represents the response for a user's total positions value
+type TotalValueResponse struct {
+	Value float64 `json:"value"`
+}
+
+// Position models a single holding from the Current Positions API
+type Position struct {
+	Title        string  `json:"title"`
+	Outcome      string  `json:"outcome"`
+	AvgPrice     float64 `json:"avgPrice"`
+	CurPrice     float64 `json:"curPrice"`
+	InitialValue float64 `json:"initialValue"`
+	CurrentValue float64 `json:"currentValue"`
+	Size         float64 `json:"size"`
+	CashPnl      float64 `json:"cashPnl"`
+	Redeemable   bool    `json:"redeemable"`
+}
+
+// CurrentPositionsResponse models the array of active positions
+type CurrentPositionsResponse []Position
+
+// PublicProfileResponse models the response from gamma-api /public-profile endpoint
+type PublicProfileResponse struct {
+	ProxyWallet string `json:"proxyWallet"`
+	Name        string `json:"name"`
+	Pseudonym   string `json:"pseudonym"`
+}

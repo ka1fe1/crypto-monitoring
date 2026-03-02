@@ -1,6 +1,8 @@
 package tasks
 
 import (
+	"time"
+
 	"github.com/ka1fe1/crypto-monitoring/config"
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
@@ -170,5 +172,21 @@ func InitTasks(
 		} else {
 			logger.Warn("Warning: Bot %s not found for GeneralMonitorTask", cfg.GeneralMonitor.BotName)
 		}
+	}
+
+	// 7. PolymarketDailyReportTask
+	if cfg.PolymarketReport.AddressListFile != "" && cfg.PolymarketReport.OutputDir != "" {
+		task := NewPolymarketDailyReportTask(cfg, polyClient)
+		go func() {
+			// Run immediately once on startup
+			task.Run()
+
+			// Then run every 24 hours
+			ticker := time.NewTicker(24 * time.Hour)
+			defer ticker.Stop()
+			for range ticker.C {
+				task.Run()
+			}
+		}()
 	}
 }
