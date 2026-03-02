@@ -7,6 +7,7 @@ import (
 
 	"github.com/ka1fe1/crypto-monitoring/config"
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/markdown"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 )
@@ -94,6 +95,16 @@ func (t *PolymarketDailyReportTask) Run() {
 			}
 		}
 
+		// Fetch User Activity
+		activity, err := t.client.GetUserActivity(proxyWallet)
+		lastActiveTime := "N/A"
+		if err != nil {
+			logger.Error("Failed to get user activity for address %s: %v", addr, err)
+		} else if len(activity) > 0 {
+			ts := activity[0].Timestamp
+			lastActiveTime = utils.FormatRelativeTime(time.Unix(ts, 0))
+		}
+
 		totalVal := 0.0
 		if tv != nil {
 			totalVal = tv.Value
@@ -115,7 +126,8 @@ func (t *PolymarketDailyReportTask) Run() {
 			Volume:           vol,
 			Rank:             rank,
 			Pnl:              pnl,
-			Value:            totalVal,
+			PositionValue:    totalVal,
+			LastActiveTime:   lastActiveTime,
 			CurrentPositions: positionsStr,
 		})
 

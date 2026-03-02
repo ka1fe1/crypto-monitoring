@@ -24,7 +24,8 @@ type TraderReportData struct {
 	Volume           float64
 	Rank             string
 	Pnl              float64
-	Value            float64
+	PositionValue    float64
+	LastActiveTime   string
 	CurrentPositions string
 }
 
@@ -132,25 +133,26 @@ func WriteReportTable(outputDir string, data []TraderReportData) error {
 	}
 
 	// Write Table Headers
-	_, err = writer.WriteString("| wallet_addr | wallet_name | proxy_addr | total_volume | vol_rank | total_pnl | value | current_position |\n")
+	_, err = writer.WriteString("| wallet_addr | wallet_name | proxy_addr | total_volume | vol_rank | total_pnl | position_value | last_active | current_position |\n")
 	if err != nil {
 		return err
 	}
-	_, err = writer.WriteString("|---|---|---|---|---|---|---|---|\n")
+	_, err = writer.WriteString("|---|---|---|---|---|---|---|---|---|\n")
 	if err != nil {
 		return err
 	}
 
 	// Write Table Rows
 	for _, row := range data {
-		line := fmt.Sprintf("| `%s` | %s | `%s` | $%.2f | %s | $%.2f | $%.2f | %s |\n",
+		line := fmt.Sprintf("| `%s` | %s | `%s` | $%.2f | %s | $%.2f | $%.2f | %s | %s |\n",
 			row.Address,
 			row.WalletName,
 			row.ProxyAddr,
 			row.Volume,
 			row.Rank,
 			row.Pnl,
-			row.Value,
+			row.PositionValue,
+			row.LastActiveTime,
 			escapeMarkdown(row.CurrentPositions),
 		)
 		_, err = writer.WriteString(line)

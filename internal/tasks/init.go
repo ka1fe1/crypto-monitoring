@@ -175,14 +175,15 @@ func InitTasks(
 	}
 
 	// 7. PolymarketDailyReportTask
-	if cfg.PolymarketReport.AddressListFile != "" && cfg.PolymarketReport.OutputDir != "" {
+	if cfg.PolymarketReport.IntervalSeconds > 0 && cfg.PolymarketReport.AddressListFile != "" && cfg.PolymarketReport.OutputDir != "" {
 		task := NewPolymarketDailyReportTask(cfg, polyClient)
+		interval := time.Duration(cfg.PolymarketReport.IntervalSeconds) * time.Second
 		go func() {
 			// Run immediately once on startup
 			task.Run()
 
-			// Then run every 24 hours
-			ticker := time.NewTicker(24 * time.Hour)
+			// Then run at configured interval
+			ticker := time.NewTicker(interval)
 			defer ticker.Stop()
 			for range ticker.C {
 				task.Run()

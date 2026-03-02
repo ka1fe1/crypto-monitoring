@@ -29,15 +29,25 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	openSeaService := service.NewOpenSeaService(openSeaClient, cmcClient)
 	openSeaHandler := handlers.NewOpenSeaHandler(openSeaService, cfg.NFTFloorPriceMonitor.NFTCollections)
 
+	// Initialize Polymarket Report Handler
+	polyReportHandler := handlers.NewPolymarketReportHandler(cfg)
+
 	// Register routes
 	r.GET("/ping", handlers.PingHandler)
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	// Static files & frontend pages
+	r.Static("/static", cfg.WebStaticDir)
+	r.GET("/polymarket/report", func(c *gin.Context) {
+		c.File(cfg.WebStaticDir + "/polymarket_report.html")
+	})
 
 	api := r.Group("/api/v1")
 	{
 		api.GET("/dex/pair", dexPairHandler.GetDexPair)
 		api.GET("/token/price", tokenHandler.GetTokenPrice)
 		api.GET("/nft/floor_price", openSeaHandler.GetNFTFloorPrice)
+		api.GET("/polymarket/report", polyReportHandler.GetLatestReport)
 	}
 
 	return r

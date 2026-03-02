@@ -28,6 +28,7 @@ type Config struct {
 	TwitterMonitor       TwitterMonitorConfig       `yaml:"twitter_monitor"`
 	GeneralMonitor       GeneralMonitorConfig       `yaml:"general_monitor"`
 	Log                  LogConfig                  `yaml:"log"`
+	WebStaticDir         string                     `yaml:"web_static_dir"`
 }
 
 type LogConfig struct {
@@ -94,6 +95,7 @@ type PolymarketConfig struct {
 type PolymarketReportConfig struct {
 	AddressListFile string `yaml:"address_list_file"`
 	OutputDir       string `yaml:"output_dir"`
+	IntervalSeconds int    `yaml:"interval_seconds"`
 }
 
 type TwitterConfig struct {
@@ -249,6 +251,12 @@ func LoadConfig(path string) (*Config, error) {
 	}
 	if cfg.PolymarketReport.OutputDir != "" && !filepath.IsAbs(cfg.PolymarketReport.OutputDir) {
 		cfg.PolymarketReport.OutputDir = filepath.Join(projectRoot, cfg.PolymarketReport.OutputDir)
+	}
+	if cfg.WebStaticDir == "" {
+		cfg.WebStaticDir = "./web/static"
+	}
+	if !filepath.IsAbs(cfg.WebStaticDir) {
+		cfg.WebStaticDir = filepath.Join(projectRoot, cfg.WebStaticDir)
 	}
 
 	return &cfg, nil

@@ -120,3 +120,17 @@ type PublicProfileResponse struct {
 	Name        string `json:"name"`
 	Pseudonym   string `json:"pseudonym"`
 }
+
+// Activity models a single action from the /activity endpoint
+type Activity struct {
+	ProxyWallet string  `json:"proxyWallet"`
+	Timestamp   int64   `json:"timestamp"`
+	Type        string  `json:"type"`
+	Size        float64 `json:"size,omitempty"`
+	UsdcSize    float64 `json:"usdcSize,omitempty"`
+	Title       string  `json:"title,omitempty"`
+	Outcome     string  `json:"outcome,omitempty"`
+}
+
+// ActivityResponse models the JSON array of activities
+type ActivityResponse []Activity

@@ -70,6 +70,7 @@ docker build -t crypto-monitoring:25121702 .
 docker run -d \
   --name crypto-monitoring \
   -v $(pwd)/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
+  -v $(pwd)/docker-app/crypto-monitor/data:/app/data \
   -p 8080:8080 \
   tataka1takes2/crypto-monitoring:2602281003
 ```

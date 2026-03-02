@@ -29,11 +29,14 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 # Copy binary from builder
 COPY --from=builder /app/crypto-monitoring .
 
+# Copy web static files
+COPY --from=builder /app/web/static /app/web/static
+
 # Set config path environment variable
 ENV CONFIG_PATH=/app/config/config.yaml
 
-# Expose config volume
-VOLUME ["/app/config"]
+# Expose config and data volumes
+VOLUME ["/app/config", "/app/data"]
 
 # Expose port
 EXPOSE 8080

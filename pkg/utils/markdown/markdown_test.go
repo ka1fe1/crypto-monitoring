@@ -55,7 +55,7 @@ func TestWriteReportTable(t *testing.T) {
 			Volume:           1000.50,
 			Rank:             "1",
 			Pnl:              250.00,
-			Value:            500.25,
+			PositionValue:    500.25,
 			CurrentPositions: "Long BTC|Short ETH",
 		},
 		{
@@ -65,7 +65,7 @@ func TestWriteReportTable(t *testing.T) {
 			Volume:           0,
 			Rank:             "2",
 			Pnl:              0,
-			Value:            0,
+			PositionValue:    0,
 			CurrentPositions: "None",
 		},
 	}

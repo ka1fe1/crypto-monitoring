@@ -287,3 +287,41 @@ func (c *Client) GetCurrentPositionsForUser(address string) (*CurrentPositionsRe
 
 	return &result, nil
 }
+
+// GetUserActivity fetches the recent activity for a user.
+func (c *Client) GetUserActivity(address string) (ActivityResponse, error) {
+	// API: https://data-api.polymarket.com/activity?user={address}
+	url := fmt.Sprintf("https://data-api.polymarket.com/activity?user=%s", address)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("accept", "application/json")
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, string(respBody))
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var result ActivityResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal activity: %w", err)
+	}
+
+	return result, nil
+}

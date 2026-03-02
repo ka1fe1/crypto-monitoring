@@ -39,7 +39,7 @@ func FormatRelativeTime(t time.Time) string {
 	} else if duration < 24*time.Hour {
 		return fmt.Sprintf("%s (%d hours ago)", bjTime, int(duration.Hours()))
 	} else {
-		return bjTime
+		return fmt.Sprintf("%s (%d d ago)", bjTime, int(duration.Hours()/24))
 	}
 }
 

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
@@ -142,4 +143,24 @@ func TestResolveProxyWallet(t *testing.T) {
 	}
 
 	t.Logf("EOA %s -> proxyWallet %s", address, proxyWallet)
+}
+
+func TestGetUserActivity(t *testing.T) {
+	address := "0xfe9b5b2109a59138e4e645167a8384aa420dcb15"
+	res, err := client.GetUserActivity(address)
+	if err != nil {
+		t.Fatalf("Failed to GetUserActivity: %v", err)
+	}
+
+	if res == nil {
+		t.Fatal("ActivityResponse is nil")
+	}
+
+	t.Logf("Activity for %s: %v items", address, len(res))
+	if len(res) > 0 {
+		ts := res[0].Timestamp
+		loc := time.FixedZone("UTC+8", 8*3600)
+		formatted := time.Unix(ts, 0).In(loc).Format("2006-01-02 15:04:05")
+		t.Logf("Latest Activity: timestamp=%v, type=%s, UTC+8=%s", res[0].Timestamp, res[0].Type, formatted)
+	}
 }
