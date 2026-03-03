@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 )
 
@@ -26,7 +27,8 @@ func TestPolymarketDailyReportTask_Run(t *testing.T) {
 		t.Fatal("OutputDir not configured in config.yaml")
 	}
 
-	task := NewPolymarketDailyReportTask(testCfg, polyClient)
+	var qh utils.QuietHoursParams
+	task := NewPolymarketDailyReportTask(testCfg, polyClient, 86400, qh)
 	task.Run()
 
 	// Verify a report file was generated

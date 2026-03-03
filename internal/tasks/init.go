@@ -176,7 +176,21 @@ func InitTasks(
 
 	// 7. PolymarketDailyReportTask
 	if cfg.PolymarketReport.IntervalSeconds > 0 && cfg.PolymarketReport.AddressListFile != "" && cfg.PolymarketReport.OutputDir != "" {
-		task := NewPolymarketDailyReportTask(cfg, polyClient)
+		var qh utils.QuietHoursParams
+		if cfg.PolymarketReport.QuietHours != nil {
+			qh = utils.QuietHoursParams{
+				Enabled:            cfg.PolymarketReport.QuietHours.Enabled,
+				StartHour:          cfg.PolymarketReport.QuietHours.StartHour,
+				EndHour:            cfg.PolymarketReport.QuietHours.EndHour,
+				Behavior:           cfg.PolymarketReport.QuietHours.Behavior,
+				ThrottleMultiplier: cfg.PolymarketReport.QuietHours.ThrottleMultiplier,
+			}
+		} else {
+			// Default: Pause during 00:00-08:00
+			qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+		}
+
+		task := NewPolymarketDailyReportTask(cfg, polyClient, cfg.PolymarketReport.IntervalSeconds, qh)
 		interval := time.Duration(cfg.PolymarketReport.IntervalSeconds) * time.Second
 		go func() {
 			// Run immediately once on startup

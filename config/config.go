@@ -93,9 +93,10 @@ type PolymarketConfig struct {
 }
 
 type PolymarketReportConfig struct {
-	AddressListFile string `yaml:"address_list_file"`
-	OutputDir       string `yaml:"output_dir"`
-	IntervalSeconds int    `yaml:"interval_seconds"`
+	AddressListFile string            `yaml:"address_list_file"`
+	OutputDir       string            `yaml:"output_dir"`
+	IntervalSeconds int               `yaml:"interval_seconds"`
+	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
 }
 
 type TwitterConfig struct {

@@ -17,6 +17,7 @@ description: build & push docker image
 ```
 
 3. 推送 tag
+
 ```bash
   docker push tataka1takes2/crypto-monitoring:{tag}
 ```

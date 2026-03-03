@@ -13,14 +13,24 @@ import (
 )
 
 type PolymarketDailyReportTask struct {
-	cfg    *config.PolymarketReportConfig
-	client *polymarket.Client
+	cfg              *config.PolymarketReportConfig
+	client           *polymarket.Client
+	interval         time.Duration
+	quietHoursParams utils.QuietHoursParams
+	lastRunTime      time.Time
 }
 
-func NewPolymarketDailyReportTask(cfg *config.Config, pmClient *polymarket.Client) *PolymarketDailyReportTask {
+func NewPolymarketDailyReportTask(cfg *config.Config, pmClient *polymarket.Client, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *PolymarketDailyReportTask {
+	interval := time.Duration(intervalSeconds) * time.Second
+	if interval <= 0 {
+		interval = 24 * 3600 * time.Second // Default to 24 hours
+	}
+
 	return &PolymarketDailyReportTask{
-		cfg:    &cfg.PolymarketReport,
-		client: pmClient,
+		cfg:              &cfg.PolymarketReport,
+		client:           pmClient,
+		interval:         interval,
+		quietHoursParams: quietHoursParams,
 	}
 }
 
@@ -29,6 +39,11 @@ func (t *PolymarketDailyReportTask) Name() string {
 }
 
 func (t *PolymarketDailyReportTask) Run() {
+	if !utils.ShouldExecTask(t.quietHoursParams, t.lastRunTime, t.interval) {
+		return
+	}
+	t.lastRunTime = time.Now()
+
 	logger.Info("Starting PolymarketDailyReportTask")
 
 	// 1. Read Addresses
