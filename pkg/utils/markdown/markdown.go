@@ -114,7 +114,9 @@ func WriteReportTable(outputDir string, data []TraderReportData) error {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 
-	timestamp := time.Now().Format("20060102_1504")
+	bjLoc := time.FixedZone("UTC+8", 8*3600)
+	nowBJ := time.Now().In(bjLoc)
+	timestamp := nowBJ.Format("20060102_1504")
 	filename := fmt.Sprintf("polymarket_volume_%s.md", timestamp)
 	filePath := filepath.Join(outputDir, filename)
 
@@ -127,7 +129,7 @@ func WriteReportTable(outputDir string, data []TraderReportData) error {
 	writer := bufio.NewWriter(file)
 
 	// Write Report Header
-	_, err = writer.WriteString(fmt.Sprintf("# Polymarket Trader Daily Report - %s\n\n", time.Now().Format("2006-01-02 15:04:05")))
+	_, err = writer.WriteString(fmt.Sprintf("# Polymarket Trader Daily Report - %s\n\n", nowBJ.Format("2006-01-02 15:04:05")))
 	if err != nil {
 		return err
 	}
