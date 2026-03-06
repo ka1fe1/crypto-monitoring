@@ -9,6 +9,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 )
 
 type TokenPriceMonitorTask struct {
@@ -88,11 +89,23 @@ func (t *TokenPriceMonitorTask) run() {
 		return
 	}
 
-	// This is using the detailed format which matches the previous logic
-	// But wait, the previous logic added newlines and joined with "\n---\n"
-	// TokenService.FormatTokenPricesDetailed does exactly that.
-	// But it returns the joined string, not the slice.
-	formatted, lastUpdated := t.formatTokenPricesDetailed(prices, t.tokenIds)
+	var cnyPrices map[string]utils.TokenInfo
+	hasPaxg := false
+	for _, id := range t.tokenIds {
+		if id == constant.PAXG_TOKEN_ID {
+			hasPaxg = true
+			break
+		}
+	}
+
+	if hasPaxg {
+		cnyPrices, err = t.tokenService.GetTokenPrice([]string{constant.PAXG_TOKEN_ID}, "CNY")
+		if err != nil {
+			logger.Error("Error fetching PAXG token price in CNY: %v", err)
+		}
+	}
+
+	formatted, lastUpdated := t.formatTokenPricesDetailed(prices, cnyPrices, t.tokenIds)
 
 	if formatted == "" {
 		return
@@ -113,7 +126,7 @@ func (t *TokenPriceMonitorTask) run() {
 }
 
 // formatTokenPricesDetailed returns the format used by TokenPriceMonitorTask
-func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]utils.TokenInfo, tokenIds []string) (string, time.Time) {
+func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]utils.TokenInfo, cnyPrices map[string]utils.TokenInfo, tokenIds []string) (string, time.Time) {
 	var texts []string
 	var maxUpdated time.Time
 
@@ -125,8 +138,23 @@ func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]util
 		if tokenInfo.LastUpdated.After(maxUpdated) {
 			maxUpdated = tokenInfo.LastUpdated
 		}
+
+		if tokenId == constant.PAXG_TOKEN_ID && cnyPrices != nil {
+			if cnyInfo, ok := cnyPrices[tokenId]; ok {
+				pricePerGram := cnyInfo.Price / 31.1034768
+				if cnyInfo.LastUpdated.After(maxUpdated) {
+					maxUpdated = cnyInfo.LastUpdated
+				}
+				text := fmt.Sprintf(
+					"- **%s**: ***$%s*** | ***¥%.2f/克*** (%.2f%%)",
+					cnyInfo.Symbol, utils.FormatPrice(tokenInfo.Price), pricePerGram, cnyInfo.PercentChange1h)
+				texts = append(texts, text)
+				continue
+			}
+		}
+
 		text := fmt.Sprintf(
-			"- **%s**: ***$%s*** (%.2f%%)\n",
+			"- **%s**: ***$%s*** (%.2f%%)",
 			tokenInfo.Symbol, utils.FormatPrice(tokenInfo.Price), tokenInfo.PercentChange1h)
 		texts = append(texts, text)
 	}

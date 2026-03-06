@@ -10,6 +10,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 )
 
@@ -143,7 +144,23 @@ func (t *GeneralMonitorTask) getTokenPriceContent() (string, time.Time, error) {
 		return "", time.Time{}, err
 	}
 
-	formatted, maxUpdated := t.formatTokenPricesSimple(prices, t.tokenIds)
+	var cnyPrices map[string]utils.TokenInfo
+	hasPaxg := false
+	for _, id := range t.tokenIds {
+		if id == constant.PAXG_TOKEN_ID {
+			hasPaxg = true
+			break
+		}
+	}
+
+	if hasPaxg {
+		cnyPrices, err = t.tokenService.GetTokenPrice([]string{constant.PAXG_TOKEN_ID}, "CNY")
+		if err != nil {
+			logger.Error("Error fetching PAXG token price in CNY for GeneralMonitor: %v", err)
+		}
+	}
+
+	formatted, maxUpdated := t.formatTokenPricesSimple(prices, cnyPrices, t.tokenIds)
 	if formatted == "" {
 		return "", time.Time{}, nil
 	}
@@ -201,7 +218,7 @@ func (t *GeneralMonitorTask) formatPolymarketMarkets(markets []polymarket.Market
 	return strings.Join(texts, "\n")
 }
 
-func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.TokenInfo, tokenIds []string) (string, time.Time) {
+func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.TokenInfo, cnyPrices map[string]utils.TokenInfo, tokenIds []string) (string, time.Time) {
 	var texts []string
 	var maxUpdated time.Time
 
@@ -213,6 +230,21 @@ func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.Tok
 		if tokenInfo.LastUpdated.After(maxUpdated) {
 			maxUpdated = tokenInfo.LastUpdated
 		}
+
+		if tokenId == constant.PAXG_TOKEN_ID && cnyPrices != nil {
+			if cnyInfo, ok := cnyPrices[tokenId]; ok {
+				pricePerGram := cnyInfo.Price / 31.1034768
+				if cnyInfo.LastUpdated.After(maxUpdated) {
+					maxUpdated = cnyInfo.LastUpdated
+				}
+				text := fmt.Sprintf(
+					"- **%s**: ***$%s*** | ***¥%.2f/克*** (%.2f%%)",
+					cnyInfo.Symbol, utils.FormatPrice(tokenInfo.Price), pricePerGram, cnyInfo.PercentChange1h)
+				texts = append(texts, text)
+				continue
+			}
+		}
+
 		text := fmt.Sprintf(
 			"- **%s**: ***$%s*** (%.2f%%)",
 			tokenInfo.Symbol, utils.FormatPrice(tokenInfo.Price), tokenInfo.PercentChange1h)

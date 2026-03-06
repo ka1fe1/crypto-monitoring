@@ -7,7 +7,7 @@ import (
 )
 
 type TokenService interface {
-	GetTokenPrice(ids []string) (map[string]utils.TokenInfo, error)
+	GetTokenPrice(ids []string, convert ...string) (map[string]utils.TokenInfo, error)
 }
 
 type tokenService struct {
@@ -20,8 +20,8 @@ func NewTokenService(client *utils.CoinMarketClient) TokenService {
 	}
 }
 
-func (s *tokenService) GetTokenPrice(ids []string) (map[string]utils.TokenInfo, error) {
-	prices, err := s.client.GetPrice(ids)
+func (s *tokenService) GetTokenPrice(ids []string, convert ...string) (map[string]utils.TokenInfo, error) {
+	prices, err := s.client.GetPrice(ids, convert...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token prices: %w", err)
 	}

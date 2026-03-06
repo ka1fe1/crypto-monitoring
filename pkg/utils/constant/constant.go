@@ -7,4 +7,6 @@ const (
 
 	QUIET_HOURS_BEHAVIOR_PAUSE    = "pause"
 	QUIET_HOURS_BEHAVIOR_THROTTLE = "throttle"
+
+	PAXG_TOKEN_ID = "4705"
 )

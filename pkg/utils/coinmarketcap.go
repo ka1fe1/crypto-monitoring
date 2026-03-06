@@ -58,9 +58,10 @@ type TokenInfo struct {
 	LastUpdated      time.Time
 }
 
-// GetPrice fetches the prices of multiple cryptocurrency IDs in USD.
-// It uses the /v2/cryptocurrency/quotes/latest endpoint.
-func (c *CoinMarketClient) GetPrice(ids []string) (map[string]TokenInfo, error) {
+// GetPrice fetches the prices of multiple cryptocurrency IDs.
+// The convert parameter is optional. If provided, it specifies the currency to convert to (e.g. "USD", "CNY").
+// If not provided, it defaults to "USD".
+func (c *CoinMarketClient) GetPrice(ids []string, convert ...string) (map[string]TokenInfo, error) {
 	u, err := url.Parse(c.BaseURL + "/cryptocurrency/quotes/latest")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
@@ -68,6 +69,13 @@ func (c *CoinMarketClient) GetPrice(ids []string) (map[string]TokenInfo, error) 
 
 	q := u.Query()
 	q.Set("id", strings.Join(ids, ","))
+
+	targetCurrency := "USD"
+	if len(convert) > 0 && convert[0] != "" {
+		targetCurrency = convert[0]
+		q.Set("convert", targetCurrency)
+	}
+
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)
@@ -104,13 +112,16 @@ func (c *CoinMarketClient) GetPrice(ids []string) (map[string]TokenInfo, error) 
 
 	result := make(map[string]TokenInfo)
 	for id, crypto := range quoteResp.Data {
-		usdQuote := crypto.Quote["USD"]
-		lastUpdated, _ := time.Parse(time.RFC3339, usdQuote.LastUpdated)
+		quoteData, ok := crypto.Quote[targetCurrency]
+		if !ok {
+			quoteData = crypto.Quote["USD"]
+		}
+		lastUpdated, _ := time.Parse(time.RFC3339, quoteData.LastUpdated)
 		result[id] = TokenInfo{
-			Price:            usdQuote.Price,
+			Price:            quoteData.Price,
 			Symbol:           crypto.Symbol,
-			PercentChange1h:  usdQuote.PercentChange1h,
-			PercentChange24h: usdQuote.PercentChange24h,
+			PercentChange1h:  quoteData.PercentChange1h,
+			PercentChange24h: quoteData.PercentChange24h,
 			LastUpdated:      lastUpdated,
 		}
 	}
@@ -118,9 +129,10 @@ func (c *CoinMarketClient) GetPrice(ids []string) (map[string]TokenInfo, error) 
 	return result, nil
 }
 
-// GetPriceBySymbol fetches the prices of multiple cryptocurrency symbols in USD.
-// It uses the /v2/cryptocurrency/quotes/latest endpoint.
-func (c *CoinMarketClient) GetPriceBySymbol(symbols []string) (map[string]TokenInfo, error) {
+// GetPriceBySymbol fetches the prices of multiple cryptocurrency symbols.
+// The convert parameter is optional. If provided, it specifies the currency to convert to (e.g. "USD", "CNY").
+// If not provided, it defaults to "USD".
+func (c *CoinMarketClient) GetPriceBySymbol(symbols []string, convert ...string) (map[string]TokenInfo, error) {
 	u, err := url.Parse(c.BaseURL + "/cryptocurrency/quotes/latest")
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
@@ -128,6 +140,13 @@ func (c *CoinMarketClient) GetPriceBySymbol(symbols []string) (map[string]TokenI
 
 	q := u.Query()
 	q.Set("symbol", strings.Join(symbols, ","))
+
+	targetCurrency := "USD"
+	if len(convert) > 0 && convert[0] != "" {
+		targetCurrency = strings.ToUpper(convert[0])
+		q.Set("convert", targetCurrency)
+	}
+
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest("GET", u.String(), nil)
@@ -186,13 +205,16 @@ func (c *CoinMarketClient) GetPriceBySymbol(symbols []string) (map[string]TokenI
 			// Just take the first one if multiple exist for the same symbol (e.g. different networks/tokens)
 			// Ideally we'd filter, but for major coins like ETH/SOL it's usually the first.
 			crypto := cryptoList[0]
-			usdQuote := crypto.Quote["USD"]
-			lastUpdated, _ := time.Parse(time.RFC3339, usdQuote.LastUpdated)
+			quoteData, ok := crypto.Quote[targetCurrency]
+			if !ok {
+				quoteData = crypto.Quote["USD"]
+			}
+			lastUpdated, _ := time.Parse(time.RFC3339, quoteData.LastUpdated)
 			result[symbol] = TokenInfo{
-				Price:            usdQuote.Price,
+				Price:            quoteData.Price,
 				Symbol:           crypto.Symbol,
-				PercentChange1h:  usdQuote.PercentChange1h,
-				PercentChange24h: usdQuote.PercentChange24h,
+				PercentChange1h:  quoteData.PercentChange1h,
+				PercentChange24h: quoteData.PercentChange24h,
 				LastUpdated:      lastUpdated,
 			}
 		}

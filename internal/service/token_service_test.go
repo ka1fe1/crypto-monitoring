@@ -11,7 +11,7 @@ func TestTokenService_GetTokenPrice(t *testing.T) {
 		t.Skip("Service not initialized")
 	}
 
-	prices, err := tokenSvc.GetTokenPrice([]string{"1", "1027", "1839", "5426"})
+	prices, err := tokenSvc.GetTokenPrice([]string{"1", "1027", "1839", "5426", "4705"})
 	if err != nil {
 		t.Fatalf("GetTokenPrice failed: %v", err)
 	}

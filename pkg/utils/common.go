@@ -33,13 +33,13 @@ func FormatRelativeTime(t time.Time) string {
 	duration := time.Since(t)
 
 	if duration < time.Minute {
-		return fmt.Sprintf("%s (%d s ago)", bjTime, int(duration.Seconds()))
+		return fmt.Sprintf("%s(%d s ago)", bjTime, int(duration.Seconds()))
 	} else if duration < time.Hour {
-		return fmt.Sprintf("%s (%d min ago)", bjTime, int(duration.Minutes()))
+		return fmt.Sprintf("%s(%d min ago)", bjTime, int(duration.Minutes()))
 	} else if duration < 24*time.Hour {
-		return fmt.Sprintf("%s (%d hours ago)", bjTime, int(duration.Hours()))
+		return fmt.Sprintf("%s(%d hours ago)", bjTime, int(duration.Hours()))
 	} else {
-		return fmt.Sprintf("%s (%d d ago)", bjTime, int(duration.Hours()/24))
+		return fmt.Sprintf("%s(%d d ago)", bjTime, int(duration.Hours()/24))
 	}
 }
 
