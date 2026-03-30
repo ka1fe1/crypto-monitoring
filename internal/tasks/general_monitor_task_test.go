@@ -68,6 +68,8 @@ func TestGeneralMonitorTask_Run(t *testing.T) {
 		dingBot,
 		cfg.GeneralMonitor.Modules,
 		tokenIds,
+		cfg.TokenPriceMonitor.RwaTokenIDs,
+		cfg.TokenPriceMonitor.RwaTokenNames,
 		cfg.PolymarketMonitor.MarketIDs,
 		60,
 		utils.QuietHoursParams{Enabled: false},

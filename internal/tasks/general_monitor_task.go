@@ -25,6 +25,8 @@ type GeneralMonitorTask struct {
 	quietHoursParams  utils.QuietHoursParams
 	lastRunTime       time.Time
 	tokenIds          []string
+	rwaTokenIds       []string
+	rwaTokenNames     map[string]string
 	marketIds         []string
 }
 
@@ -34,6 +36,8 @@ func NewGeneralMonitorTask(
 	dingBot *dingding.DingBot,
 	modules []string,
 	tokenIds []string,
+	rwaTokenIds []string,
+	rwaTokenNames map[string]string,
 	marketIds []string,
 	intervalSeconds int,
 	quietHoursParams utils.QuietHoursParams,
@@ -52,6 +56,8 @@ func NewGeneralMonitorTask(
 		interval:          interval,
 		quietHoursParams:  quietHoursParams,
 		tokenIds:          tokenIds,
+		rwaTokenIds:       rwaTokenIds,
+		rwaTokenNames:     rwaTokenNames,
 		marketIds:         marketIds,
 	}
 }
@@ -85,7 +91,7 @@ func (t *GeneralMonitorTask) run() {
 	var lastUpdated time.Time
 
 	// 1. Token Price Module
-	if t.isModuleEnabled("token_price") && len(t.tokenIds) > 0 {
+	if t.isModuleEnabled("token_price") && (len(t.tokenIds) > 0 || len(t.rwaTokenIds) > 0) {
 		tokenPart, updated, err := t.getTokenPriceContent()
 		if err == nil && tokenPart != "" {
 			parts = append(parts, tokenPart)
@@ -139,7 +145,11 @@ func (t *GeneralMonitorTask) isModuleEnabled(module string) bool {
 }
 
 func (t *GeneralMonitorTask) getTokenPriceContent() (string, time.Time, error) {
-	prices, err := t.tokenService.GetTokenPrice(t.tokenIds)
+	var allTokenIds []string
+	allTokenIds = append(allTokenIds, t.tokenIds...)
+	allTokenIds = append(allTokenIds, t.rwaTokenIds...)
+
+	prices, err := t.tokenService.GetTokenPrice(allTokenIds)
 	if err != nil {
 		return "", time.Time{}, err
 	}
@@ -160,7 +170,7 @@ func (t *GeneralMonitorTask) getTokenPriceContent() (string, time.Time, error) {
 		}
 	}
 
-	formatted, maxUpdated := t.formatTokenPricesSimple(prices, cnyPrices, t.tokenIds)
+	formatted, maxUpdated := t.formatTokenPricesSimple(prices, cnyPrices, t.tokenIds, t.rwaTokenIds, t.rwaTokenNames)
 	if formatted == "" {
 		return "", time.Time{}, nil
 	}
@@ -218,38 +228,72 @@ func (t *GeneralMonitorTask) formatPolymarketMarkets(markets []polymarket.Market
 	return strings.Join(texts, "\n")
 }
 
-func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.TokenInfo, cnyPrices map[string]utils.TokenInfo, tokenIds []string) (string, time.Time) {
-	var texts []string
+func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.TokenInfo, cnyPrices map[string]utils.TokenInfo, tokenIds []string, rwaTokenIds []string, rwaTokenNames map[string]string) (string, time.Time) {
+	var parts []string
 	var maxUpdated time.Time
 
-	for _, tokenId := range tokenIds {
-		tokenInfo, ok := prices[tokenId]
-		if !ok {
-			continue
-		}
-		if tokenInfo.LastUpdated.After(maxUpdated) {
-			maxUpdated = tokenInfo.LastUpdated
-		}
-
-		if tokenId == constant.PAXG_TOKEN_ID && cnyPrices != nil {
-			if cnyInfo, ok := cnyPrices[tokenId]; ok {
-				pricePerGram := cnyInfo.Price / 31.1034768
-				if cnyInfo.LastUpdated.After(maxUpdated) {
-					maxUpdated = cnyInfo.LastUpdated
-				}
-				text := fmt.Sprintf(
-					"- **%s**: ***$%s*** | ***¥%.2f/克*** (%.2f%%)",
-					cnyInfo.Symbol, utils.FormatPrice(tokenInfo.Price), pricePerGram, cnyInfo.PercentChange1h)
-				texts = append(texts, text)
+	// Format Crypto Assets
+	if len(tokenIds) > 0 {
+		var cryptoTexts []string
+		for _, tokenId := range tokenIds {
+			tokenInfo, ok := prices[tokenId]
+			if !ok {
 				continue
 			}
-		}
+			if tokenInfo.LastUpdated.After(maxUpdated) {
+				maxUpdated = tokenInfo.LastUpdated
+			}
 
-		text := fmt.Sprintf(
-			"- **%s**: ***$%s*** (%.2f%%)",
-			tokenInfo.Symbol, utils.FormatPrice(tokenInfo.Price), tokenInfo.PercentChange1h)
-		texts = append(texts, text)
+			if tokenId == constant.PAXG_TOKEN_ID && cnyPrices != nil {
+				if cnyInfo, ok := cnyPrices[tokenId]; ok {
+					pricePerGram := cnyInfo.Price / 31.1034768
+					if cnyInfo.LastUpdated.After(maxUpdated) {
+						maxUpdated = cnyInfo.LastUpdated
+					}
+					text := fmt.Sprintf(
+						"- **%s**: ***$%s*** | ***¥%.2f/克*** (%.2f%%)",
+						cnyInfo.Symbol, utils.FormatPrice(tokenInfo.Price), pricePerGram, cnyInfo.PercentChange1h)
+					cryptoTexts = append(cryptoTexts, text)
+					continue
+				}
+			}
+
+			text := fmt.Sprintf(
+				"- **%s**: ***$%s*** (%.2f%%)",
+				tokenInfo.Symbol, utils.FormatPrice(tokenInfo.Price), tokenInfo.PercentChange1h)
+			cryptoTexts = append(cryptoTexts, text)
+		}
+		if len(cryptoTexts) > 0 {
+			parts = append(parts, "#### Crypto Assets\n"+strings.Join(cryptoTexts, "\n"))
+		}
 	}
 
-	return strings.Join(texts, "\n"), maxUpdated
+	// Format RWA Assets
+	if len(rwaTokenIds) > 0 {
+		var rwaTexts []string
+		for _, tokenId := range rwaTokenIds {
+			tokenInfo, ok := prices[tokenId]
+			if !ok {
+				continue
+			}
+			if tokenInfo.LastUpdated.After(maxUpdated) {
+				maxUpdated = tokenInfo.LastUpdated
+			}
+
+			displayName := tokenInfo.Symbol
+			if chineseName, exists := rwaTokenNames[tokenId]; exists && chineseName != "" {
+				displayName = fmt.Sprintf("%s (%s)", tokenInfo.Symbol, chineseName)
+			}
+
+			text := fmt.Sprintf(
+				"- **%s**: ***$%s*** (%.2f%%)",
+				displayName, utils.FormatPrice(tokenInfo.Price), tokenInfo.PercentChange24h)
+			rwaTexts = append(rwaTexts, text)
+		}
+		if len(rwaTexts) > 0 {
+			parts = append(parts, "#### RWA Assets\n"+strings.Join(rwaTexts, "\n"))
+		}
+	}
+
+	return strings.Join(parts, "\n\n"), maxUpdated
 }

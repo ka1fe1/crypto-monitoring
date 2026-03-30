@@ -65,6 +65,9 @@ type DexPairAlterConfig struct {
 type TokenPriceMonitorConfig struct {
 	TokenIds        string            `yaml:"token_ids"`
 	TokenIDs        []string          `yaml:"-"`
+	RwaTokenIds     string            `yaml:"rwa_token_ids"`
+	RwaTokenIDs     []string          `yaml:"-"`
+	RwaTokenNames   map[string]string `yaml:"rwa_token_names"`
 	IntervalSeconds int               `yaml:"interval_seconds"`
 	BotName         string            `yaml:"bot_name"`
 	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
@@ -235,6 +238,22 @@ func LoadConfig(path string) (*Config, error) {
 				cfg.TokenPriceMonitor.TokenIDs = append(cfg.TokenPriceMonitor.TokenIDs, trimmed)
 			}
 		}
+	}
+
+	// Parse TokenPriceMonitor RwaTokenIds
+	if cfg.TokenPriceMonitor.RwaTokenIds != "" {
+		parts := strings.Split(cfg.TokenPriceMonitor.RwaTokenIds, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.TokenPriceMonitor.RwaTokenIDs = append(cfg.TokenPriceMonitor.RwaTokenIDs, trimmed)
+			}
+		}
+	}
+
+	// Initialize RwaTokenNames if nil
+	if cfg.TokenPriceMonitor.RwaTokenNames == nil {
+		cfg.TokenPriceMonitor.RwaTokenNames = make(map[string]string)
 	}
 
 	// set keyword equal to bot name

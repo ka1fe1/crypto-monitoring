@@ -66,7 +66,7 @@ func InitTasks(
 				// Default: Pause during 00:00-08:00, Throttle
 				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_THROTTLE, ThrottleMultiplier: 5}
 			}
-			NewTokenPriceMonitorTask(tokenService, tokenBot, cfg.TokenPriceMonitor.TokenIds, cfg.TokenPriceMonitor.IntervalSeconds, qh).Start()
+			NewTokenPriceMonitorTask(tokenService, tokenBot, cfg.TokenPriceMonitor.TokenIds, cfg.TokenPriceMonitor.RwaTokenIDs, cfg.TokenPriceMonitor.RwaTokenNames, cfg.TokenPriceMonitor.IntervalSeconds, qh).Start()
 		} else {
 			logger.Warn("Warning: Bot %s not found for TokenPriceMonitorTask", cfg.TokenPriceMonitor.BotName)
 		}
@@ -165,6 +165,8 @@ func InitTasks(
 				generalBot,
 				cfg.GeneralMonitor.Modules,
 				cfg.TokenPriceMonitor.TokenIDs,
+				cfg.TokenPriceMonitor.RwaTokenIDs,
+				cfg.TokenPriceMonitor.RwaTokenNames,
 				cfg.PolymarketMonitor.MarketIDs,
 				cfg.GeneralMonitor.IntervalSeconds,
 				qh,
