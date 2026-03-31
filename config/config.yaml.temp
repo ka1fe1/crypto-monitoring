@@ -19,6 +19,8 @@ dingtalk:
         access_token: "YOUR_ACCESS_TOKEN_HERE"
     "x":
         access_token: "YOUR_ACCESS_TOKEN_HERE"
+    "btc-metric":
+        access_token: "YOUR_ACCESS_TOKEN_HERE"
 token_price_monitor:
     bot_name: "token"
     token_ids: "1,1027,1839,5426,4705"
@@ -74,14 +76,11 @@ twitter_monitor:
         behavior: "pause"
     keywords:
         bwenews: "Binance Alpha,Binance,UPBIT LISTING,elonmusk,马斯克,trump"
+btc_dashboard_monitor:
+    bot_name: "btc-metric"
+    bgeometrics_api_key: "bempzL64ub"
+    interval_seconds: 100000
 general_monitor:
     bot_name: "token"
     interval_seconds: 1000000
     modules: "token_price,polymarket"
-btc_dashboard_monitor:
-    bot_name: "token"
-    interval_seconds: 43200
-    binance_api_url: "https://api.binance.com"
-    okx_api_url: "https://www.okx.com"
-    mempool_api_url: "https://mempool.space"
-    alternative_api_url: "https://api.alternative.me"

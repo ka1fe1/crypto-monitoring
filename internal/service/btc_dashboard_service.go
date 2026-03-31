@@ -6,9 +6,25 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alternative"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/binance"
-	"github.com/ka1fe1/crypto-monitoring/pkg/utils/mempool"
+)
+
+const (
+	ahr999CoefficientA = 5.84
+	ahr999CoefficientB = 17.01
+
+	wmaThresholdExtremeBear = 1.0
+	wmaThresholdBottom      = 1.5
+	wmaThresholdOverheated  = 3.0
+
+	ahr999ThresholdBottom     = 0.45
+	ahr999ThresholdInvest     = 1.2
+	ahr999ThresholdWaitAndSee = 5.0
+
+	bpRatioThresholdUndervalued = 1.0
+	bpRatioThresholdOvervalued  = 2.0
 )
 
 type BtcDashboardMetrics struct {
@@ -21,6 +37,8 @@ type BtcDashboardMetrics struct {
 	HalvingDays    int
 	HalvingBlock   int64
 	HalvingEstDate time.Time
+	BalancedPrice  float64
+	BPRatio        float64
 }
 
 type BtcDashboardService interface {
@@ -28,17 +46,35 @@ type BtcDashboardService interface {
 	GenerateMarkdownReport(metrics *BtcDashboardMetrics) string
 }
 
-type btcDashboardService struct {
-	binanceClient     *binance.Client
-	mempoolClient     *mempool.Client
-	alternativeClient *alternative.Client
+type BinanceProvider interface {
+	GetKlines(symbol, interval string, limit int) ([]binance.Kline, error)
 }
 
-func NewBtcDashboardService(b *binance.Client, m *mempool.Client, a *alternative.Client) BtcDashboardService {
+type MempoolProvider interface {
+	GetTipHeight() (int64, error)
+}
+
+type AlternativeProvider interface {
+	GetFng(limit int) (*alternative.FngResponse, error)
+}
+
+type BalancedPriceProvider interface {
+	GetBalancedPrice() (float64, error)
+}
+
+type btcDashboardService struct {
+	binanceClient     BinanceProvider
+	mempoolClient     MempoolProvider
+	alternativeClient AlternativeProvider
+	bpClient          BalancedPriceProvider
+}
+
+func NewBtcDashboardService(b BinanceProvider, m MempoolProvider, a AlternativeProvider, bp BalancedPriceProvider) BtcDashboardService {
 	return &btcDashboardService{
 		binanceClient:     b,
 		mempoolClient:     m,
 		alternativeClient: a,
+		bpClient:          bp,
 	}
 }
 
@@ -79,14 +115,15 @@ func (s *btcDashboardService) FetchAndCalculateMetrics() (*BtcDashboardMetrics, 
 		// Calculate ahr999
 		genesisTs := time.Date(2009, 1, 3, 0, 0, 0, 0, time.UTC).UnixMilli()
 		nowTs := time.Now().UnixMilli()
-		
+
 		lastKLineTs := dailyKlines[len(dailyKlines)-1].OpenTime
 		if lastKLineTs > 0 {
+			// 使用最新日线的开盘时间计算天数，确保与价格数据的取样时间点对齐
 			nowTs = lastKLineTs
 		}
 
 		coinDays := float64(nowTs-genesisTs) / 86400000.0
-		expPrice := math.Pow(10, 5.84*math.Log10(coinDays)-17.01)
+		expPrice := math.Pow(10, ahr999CoefficientA*math.Log10(coinDays)-ahr999CoefficientB)
 
 		if dma200 > 0 && expPrice > 0 {
 			metrics.Ahr999 = (currentPrice / dma200) * (currentPrice / expPrice)
@@ -102,6 +139,7 @@ func (s *btcDashboardService) FetchAndCalculateMetrics() (*BtcDashboardMetrics, 
 		halvingInterval := int64(210000)
 		nextHalving := ((height / halvingInterval) + 1) * halvingInterval
 		remaining := nextHalving - height
+		// 注意：这里的 10 分钟仅为比特币协议设计的预期平均出块时间，实际会根据全网算力波动而变化，仅作为概略估算
 		daysLeft := float64(remaining*10) / (60.0 * 24.0)
 
 		metrics.HalvingBlock = nextHalving
@@ -120,6 +158,17 @@ func (s *btcDashboardService) FetchAndCalculateMetrics() (*BtcDashboardMetrics, 
 		metrics.FGIClass = fng.Data[0].ValueClassification
 	}
 
+	// 5. Fetch Balanced Price
+	if s.bpClient != nil {
+		bp, err := s.bpClient.GetBalancedPrice()
+		if err != nil {
+			logger.Warn("failed to fetch balanced price: %v", err)
+		} else if bp > 0 && metrics.CurrentPrice > 0 {
+			metrics.BalancedPrice = bp
+			metrics.BPRatio = metrics.CurrentPrice / bp
+		}
+	}
+
 	return metrics, nil
 }
 
@@ -129,23 +178,36 @@ func (s *btcDashboardService) GenerateMarkdownReport(metrics *BtcDashboardMetric
 
 	// WMA200
 	wmaStatus := "正常牛市区间"
-	if metrics.WMARatio < 1 {
+	if metrics.WMARatio < wmaThresholdExtremeBear {
 		wmaStatus = "极端熊市信号"
-	} else if metrics.WMARatio < 1.5 {
+	} else if metrics.WMARatio < wmaThresholdBottom {
 		wmaStatus = "历史底部区间"
-	} else if metrics.WMARatio >= 3 {
+	} else if metrics.WMARatio >= wmaThresholdOverheated {
 		wmaStatus = "过热信号"
 	}
 	report += fmt.Sprintf("- **200 周均线 (200WMA)**: $%.2f\n  - 偏离度: %.2fx (状态: %s)\n",
 		metrics.WMA200, metrics.WMARatio, wmaStatus)
 
+	// Balanced Price
+	if metrics.BalancedPrice > 0 {
+		bpStatus := "过高区间 🚨"
+		if metrics.BPRatio <= bpRatioThresholdUndervalued {
+			bpStatus = "基于成本线大底 📉"
+		} else if metrics.BPRatio <= bpRatioThresholdOvervalued {
+			bpStatus = "正常估值区间 📈"
+		}
+
+		report += fmt.Sprintf("- **均衡价格 (BP)**: $%.2f\n  - 当前售价 / BP: %.2fx (状态: %s)\n",
+			metrics.BalancedPrice, metrics.BPRatio, bpStatus)
+	}
+
 	// Ahr999
 	ahrStatus := "泡沫区间"
-	if metrics.Ahr999 < 0.45 {
+	if metrics.Ahr999 < ahr999ThresholdBottom {
 		ahrStatus = "抄底区间"
-	} else if metrics.Ahr999 < 1.2 {
+	} else if metrics.Ahr999 < ahr999ThresholdInvest {
 		ahrStatus = "定投区间"
-	} else if metrics.Ahr999 < 5 {
+	} else if metrics.Ahr999 < ahr999ThresholdWaitAndSee {
 		ahrStatus = "观望区间"
 	}
 	report += fmt.Sprintf("- **ahr999 定投指数**: %.3f (状态: %s)\n", metrics.Ahr999, ahrStatus)

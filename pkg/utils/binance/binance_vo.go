@@ -44,9 +44,11 @@ func (k *Kline) UnmarshalJSON(buf []byte) error {
 	}
 
 	var err error
-	if ot, ok := tmp[0].(float64); ok {
-		k.OpenTime = int64(ot)
+	ot, err := parseFloat(tmp[0])
+	if err != nil {
+		return fmt.Errorf("invalid open_time: %w", err)
 	}
+	k.OpenTime = int64(ot)
 	if k.Open, err = parseFloat(tmp[1]); err != nil {
 		return err
 	}
@@ -62,15 +64,19 @@ func (k *Kline) UnmarshalJSON(buf []byte) error {
 	if k.Volume, err = parseFloat(tmp[5]); err != nil {
 		return err
 	}
-	if ct, ok := tmp[6].(float64); ok {
-		k.CloseTime = int64(ct)
+	ct, err := parseFloat(tmp[6])
+	if err != nil {
+		return fmt.Errorf("invalid close_time: %w", err)
 	}
+	k.CloseTime = int64(ct)
 	if k.QuoteAssetVolume, err = parseFloat(tmp[7]); err != nil {
 		return err
 	}
-	if numT, ok := tmp[8].(float64); ok {
-		k.NumberOfTrades = int64(numT)
+	numT, err := parseFloat(tmp[8])
+	if err != nil {
+		return fmt.Errorf("invalid number_of_trades: %w", err)
 	}
+	k.NumberOfTrades = int64(numT)
 	if k.TakerBuyBaseAssetVolume, err = parseFloat(tmp[9]); err != nil {
 		return err
 	}

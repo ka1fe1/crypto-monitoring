@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/ka1fe1/crypto-monitoring/internal/service"
@@ -18,6 +19,7 @@ type BtcDashboardMonitorTask struct {
 	interval         time.Duration
 	quietHoursParams utils.QuietHoursParams
 	lastRunTime      time.Time
+	mu               sync.RWMutex
 }
 
 func NewBtcDashboardMonitorTask(svc service.BtcDashboardService, dingBot *dingding.DingBot, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *BtcDashboardMonitorTask {
@@ -51,14 +53,24 @@ func (t *BtcDashboardMonitorTask) Start() {
 }
 
 func (t *BtcDashboardMonitorTask) Stop() {
-	t.stop <- true
+	select {
+	case t.stop <- true:
+	default:
+	}
 }
 
 func (t *BtcDashboardMonitorTask) run() {
-	if !utils.ShouldExecTask(t.quietHoursParams, t.lastRunTime, t.interval) {
+	t.mu.RLock()
+	lastRun := t.lastRunTime
+	t.mu.RUnlock()
+
+	if !utils.ShouldExecTask(t.quietHoursParams, lastRun, t.interval) {
 		return
 	}
+
+	t.mu.Lock()
 	t.lastRunTime = time.Now()
+	t.mu.Unlock()
 
 	metrics, err := t.svc.FetchAndCalculateMetrics()
 	if err != nil {

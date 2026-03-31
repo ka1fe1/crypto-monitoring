@@ -27,7 +27,7 @@ func loadTestConfig() (*config.Config, error) {
 	rootDir := filepath.Dir(filepath.Dir(filepath.Dir(filename)))
 
 	configPath := filepath.Join(rootDir, "config", "config.yaml")
-	
+
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		configPath = filepath.Join(rootDir, "config", "config.yaml.temp")
 	}

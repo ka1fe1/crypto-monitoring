@@ -15,6 +15,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/twitter"
 
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alternative"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/bgeometrics"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/binance"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/mempool"
 )
@@ -78,7 +79,7 @@ func TestMain(m *testing.M) {
 	svc = NewOpenSeaService(osClient, tokenClient)
 
 	// 5. Setup Btc Dashboard Service
-	binApi, memApi, altApi := "https://api.binance.com", "https://mempool.space", "https://api.alternative.me"
+	binApi, memApi, altApi, bgApi, bgKey := "https://api.binance.com", "https://mempool.space", "https://api.alternative.me", "", ""
 	if cfg != nil {
 		if cfg.BtcDashboardMonitor.BinanceApiUrl != "" {
 			binApi = cfg.BtcDashboardMonitor.BinanceApiUrl
@@ -89,13 +90,16 @@ func TestMain(m *testing.M) {
 		if cfg.BtcDashboardMonitor.AlternativeApiUrl != "" {
 			altApi = cfg.BtcDashboardMonitor.AlternativeApiUrl
 		}
+		bgApi = cfg.BtcDashboardMonitor.BgeometricsApiUrl
+		bgKey = cfg.BtcDashboardMonitor.BgeometricsApiKey
 	}
-	
+
 	bCli := binance.NewClient(binApi)
 	mCli := mempool.NewClient(memApi)
 	aCli := alternative.NewClient(altApi)
+	bpCli := bgeometrics.NewClient(bgApi, bgKey)
 
-	btcDashboardSvc = NewBtcDashboardService(bCli, mCli, aCli)
+	btcDashboardSvc = NewBtcDashboardService(bCli, mCli, aCli, bpCli)
 
 	os.Exit(m.Run())
 }

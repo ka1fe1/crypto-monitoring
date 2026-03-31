@@ -6,10 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"testing"
 	"strconv"
+	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 )
 
 var (
@@ -60,6 +61,8 @@ func TestGetFng(t *testing.T) {
 	fng, err := client.GetFng(1)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
+	} else {
+		t.Log(utils.PrintJson(fng))
 	}
 	if len(fng.Data) != 1 {
 		t.Fatalf("expected 1 record, got %d", len(fng.Data))
@@ -69,7 +72,7 @@ func TestGetFng(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected valid integer in value, got %v", err)
 	}
-	
+
 	if valueInt < 0 || valueInt > 100 {
 		t.Errorf("fgi should be between 0 and 100, got %d", valueInt)
 	}

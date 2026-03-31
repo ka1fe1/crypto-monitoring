@@ -72,7 +72,7 @@ docker run -d \
   -v ~/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -v ~/docker-app/crypto-monitor/data:/app/data \
   -p 8080:8080 \
-  tataka1takes2/crypto-monitoring:2603070050
+  tataka1takes2/crypto-monitoring:2603301919
 ```
 
 #### 3. 常用命令
@@ -84,13 +84,13 @@ docker tag crypto-monitoring:2603031818 tataka1takes2/crypto-monitoring:26030318
 
 *   **推送**
 ```bash
-docker push tataka1takes2/crypto-monitoring:2603031818
+docker push tataka1takes2/crypto-monitoring:2603301919
 ```
 
 *   **拉取**
 
 ```bash
-docker pull tataka1takes2/crypto-monitoring:2603070050
+docker pull tataka1takes2/crypto-monitoring:2603301919
 ```
 
 *   **删除容器**

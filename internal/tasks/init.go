@@ -8,12 +8,13 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/logger"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alternative"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/bgeometrics"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/binance"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/mempool"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/twitter"
-	"github.com/ka1fe1/crypto-monitoring/pkg/utils/binance"
-	"github.com/ka1fe1/crypto-monitoring/pkg/utils/mempool"
-	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alternative"
 )
 
 func InitTasks(
@@ -28,22 +29,6 @@ func InitTasks(
 	// Create services
 	twitterMonitorService := service.NewTwitterService(twitterClient)
 	polymarketService := service.NewPolymarketMonitorService(polyClient)
-	
-	binApi, memApi, altApi := "https://api.binance.com", "https://mempool.space", "https://api.alternative.me"
-	if cfg.BtcDashboardMonitor.BinanceApiUrl != "" {
-		binApi = cfg.BtcDashboardMonitor.BinanceApiUrl
-	}
-	if cfg.BtcDashboardMonitor.MempoolApiUrl != "" {
-		memApi = cfg.BtcDashboardMonitor.MempoolApiUrl
-	}
-	if cfg.BtcDashboardMonitor.AlternativeApiUrl != "" {
-		altApi = cfg.BtcDashboardMonitor.AlternativeApiUrl
-	}
-	btcDashboardService := service.NewBtcDashboardService(
-		binance.NewClient(binApi),
-		mempool.NewClient(memApi),
-		alternative.NewClient(altApi),
-	)
 
 	// 1. DexPairAlterTask
 	if cfg.DexPairAlter.IntervalSeconds > 0 {
@@ -228,6 +213,29 @@ func InitTasks(
 
 	// 8. BtcDashboardMonitorTask
 	if cfg.BtcDashboardMonitor.IntervalSeconds > 0 {
+		binApi, memApi, altApi := "https://api.binance.com", "https://mempool.space", "https://api.alternative.me"
+		if cfg.BtcDashboardMonitor.BinanceApiUrl != "" {
+			binApi = cfg.BtcDashboardMonitor.BinanceApiUrl
+		}
+		if cfg.BtcDashboardMonitor.MempoolApiUrl != "" {
+			memApi = cfg.BtcDashboardMonitor.MempoolApiUrl
+		}
+		if cfg.BtcDashboardMonitor.AlternativeApiUrl != "" {
+			altApi = cfg.BtcDashboardMonitor.AlternativeApiUrl
+		}
+		bgApi := cfg.BtcDashboardMonitor.BgeometricsApiUrl
+		bgKey := cfg.BtcDashboardMonitor.BgeometricsApiKey
+		var bgOpts []bgeometrics.Option
+		if cfg.BtcDashboardMonitor.BgeometricsTimeout > 0 {
+			bgOpts = append(bgOpts, bgeometrics.WithTimeout(time.Duration(cfg.BtcDashboardMonitor.BgeometricsTimeout)*time.Second))
+		}
+		btcDashboardService := service.NewBtcDashboardService(
+			binance.NewClient(binApi),
+			mempool.NewClient(memApi),
+			alternative.NewClient(altApi),
+			bgeometrics.NewClient(bgApi, bgKey, bgOpts...),
+		)
+
 		btcBot := dingBots[cfg.BtcDashboardMonitor.BotName]
 		if btcBot != nil {
 			var qh utils.QuietHoursParams

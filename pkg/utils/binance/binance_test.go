@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/ka1fe1/crypto-monitoring/config"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 )
 
 var (
@@ -63,6 +64,8 @@ func TestGetKlines(t *testing.T) {
 	}
 	if len(klines) != 5 {
 		t.Fatalf("expected 5 klines, got %d", len(klines))
+	} else {
+		t.Log(utils.PrintJson(klines))
 	}
 
 	for i, k := range klines {

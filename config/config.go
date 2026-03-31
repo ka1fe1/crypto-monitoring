@@ -143,13 +143,15 @@ type GeneralMonitorConfig struct {
 }
 
 type BtcDashboardMonitorConfig struct {
-	IntervalSeconds   int               `yaml:"interval_seconds"`
-	BotName           string            `yaml:"bot_name"`
-	BinanceApiUrl     string            `yaml:"binance_api_url"`
-	OkxApiUrl         string            `yaml:"okx_api_url"`
-	MempoolApiUrl     string            `yaml:"mempool_api_url"`
-	AlternativeApiUrl string            `yaml:"alternative_api_url"`
-	QuietHours        *QuietHoursConfig `yaml:"quiet_hours"`
+	IntervalSeconds    int               `yaml:"interval_seconds"`
+	BotName            string            `yaml:"bot_name"`
+	BinanceApiUrl      string            `yaml:"binance_api_url"`
+	MempoolApiUrl      string            `yaml:"mempool_api_url"`
+	AlternativeApiUrl  string            `yaml:"alternative_api_url"`
+	BgeometricsApiKey  string            `yaml:"bgeometrics_api_key"`
+	BgeometricsApiUrl  string            `yaml:"bgeometrics_api_url"`
+	BgeometricsTimeout int               `yaml:"bgeometrics_timeout"` // 超时秒数，默认 10
+	QuietHours         *QuietHoursConfig `yaml:"quiet_hours"`
 }
 
 func LoadConfig(path string) (*Config, error) {
