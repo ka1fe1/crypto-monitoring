@@ -27,6 +27,7 @@ type Config struct {
 	Twitter              TwitterConfig              `yaml:"twitter"`
 	TwitterMonitor       TwitterMonitorConfig       `yaml:"twitter_monitor"`
 	GeneralMonitor       GeneralMonitorConfig       `yaml:"general_monitor"`
+	BtcDashboardMonitor  BtcDashboardMonitorConfig  `yaml:"btc_dashboard_monitor"`
 	Log                  LogConfig                  `yaml:"log"`
 	WebStaticDir         string                     `yaml:"web_static_dir"`
 }
@@ -139,6 +140,16 @@ type GeneralMonitorConfig struct {
 	ModulesStr      string            `yaml:"modules"`
 	Modules         []string          `yaml:"-"`
 	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
+}
+
+type BtcDashboardMonitorConfig struct {
+	IntervalSeconds   int               `yaml:"interval_seconds"`
+	BotName           string            `yaml:"bot_name"`
+	BinanceApiUrl     string            `yaml:"binance_api_url"`
+	OkxApiUrl         string            `yaml:"okx_api_url"`
+	MempoolApiUrl     string            `yaml:"mempool_api_url"`
+	AlternativeApiUrl string            `yaml:"alternative_api_url"`
+	QuietHours        *QuietHoursConfig `yaml:"quiet_hours"`
 }
 
 func LoadConfig(path string) (*Config, error) {

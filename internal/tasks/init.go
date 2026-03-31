@@ -11,6 +11,9 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/twitter"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/binance"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/mempool"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alternative"
 )
 
 func InitTasks(
@@ -25,6 +28,22 @@ func InitTasks(
 	// Create services
 	twitterMonitorService := service.NewTwitterService(twitterClient)
 	polymarketService := service.NewPolymarketMonitorService(polyClient)
+	
+	binApi, memApi, altApi := "https://api.binance.com", "https://mempool.space", "https://api.alternative.me"
+	if cfg.BtcDashboardMonitor.BinanceApiUrl != "" {
+		binApi = cfg.BtcDashboardMonitor.BinanceApiUrl
+	}
+	if cfg.BtcDashboardMonitor.MempoolApiUrl != "" {
+		memApi = cfg.BtcDashboardMonitor.MempoolApiUrl
+	}
+	if cfg.BtcDashboardMonitor.AlternativeApiUrl != "" {
+		altApi = cfg.BtcDashboardMonitor.AlternativeApiUrl
+	}
+	btcDashboardService := service.NewBtcDashboardService(
+		binance.NewClient(binApi),
+		mempool.NewClient(memApi),
+		alternative.NewClient(altApi),
+	)
 
 	// 1. DexPairAlterTask
 	if cfg.DexPairAlter.IntervalSeconds > 0 {
@@ -205,5 +224,28 @@ func InitTasks(
 				task.Run()
 			}
 		}()
+	}
+
+	// 8. BtcDashboardMonitorTask
+	if cfg.BtcDashboardMonitor.IntervalSeconds > 0 {
+		btcBot := dingBots[cfg.BtcDashboardMonitor.BotName]
+		if btcBot != nil {
+			var qh utils.QuietHoursParams
+			if cfg.BtcDashboardMonitor.QuietHours != nil {
+				qh = utils.QuietHoursParams{
+					Enabled:            cfg.BtcDashboardMonitor.QuietHours.Enabled,
+					StartHour:          cfg.BtcDashboardMonitor.QuietHours.StartHour,
+					EndHour:            cfg.BtcDashboardMonitor.QuietHours.EndHour,
+					Behavior:           cfg.BtcDashboardMonitor.QuietHours.Behavior,
+					ThrottleMultiplier: cfg.BtcDashboardMonitor.QuietHours.ThrottleMultiplier,
+				}
+			} else {
+				// Default: Pause during 00:00-08:00
+				qh = utils.QuietHoursParams{Enabled: true, StartHour: 0, EndHour: 8, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
+			}
+			NewBtcDashboardMonitorTask(btcDashboardService, btcBot, cfg.BtcDashboardMonitor.IntervalSeconds, qh).Start()
+		} else {
+			logger.Warn("Warning: Bot %s not found for BtcDashboardMonitorTask", cfg.BtcDashboardMonitor.BotName)
+		}
 	}
 }
