@@ -13,12 +13,18 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/opensea"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/twitter"
+
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alternative"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/binance"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/mempool"
 )
 
 var (
-	polySvc    PolymarketMonitorService
-	twitterSvc TwitterService
-	tokenSvc   TokenService
+	polySvc         PolymarketMonitorService
+	twitterSvc      TwitterService
+	tokenSvc        TokenService
+	btcDashboardSvc BtcDashboardService
+	osSvc           OpenSeaService
 )
 
 func loadServiceTestConfig() (*config.Config, error) {
@@ -70,6 +76,26 @@ func TestMain(m *testing.M) {
 	// opensea_service_test.go uses: svc = NewOpenSeaService(osClient, cmcClient)
 	// We use the same cmcClient as tokenSvc? Yes, likely fine.
 	svc = NewOpenSeaService(osClient, tokenClient)
+
+	// 5. Setup Btc Dashboard Service
+	binApi, memApi, altApi := "https://api.binance.com", "https://mempool.space", "https://api.alternative.me"
+	if cfg != nil {
+		if cfg.BtcDashboardMonitor.BinanceApiUrl != "" {
+			binApi = cfg.BtcDashboardMonitor.BinanceApiUrl
+		}
+		if cfg.BtcDashboardMonitor.MempoolApiUrl != "" {
+			memApi = cfg.BtcDashboardMonitor.MempoolApiUrl
+		}
+		if cfg.BtcDashboardMonitor.AlternativeApiUrl != "" {
+			altApi = cfg.BtcDashboardMonitor.AlternativeApiUrl
+		}
+	}
+	
+	bCli := binance.NewClient(binApi)
+	mCli := mempool.NewClient(memApi)
+	aCli := alternative.NewClient(altApi)
+
+	btcDashboardSvc = NewBtcDashboardService(bCli, mCli, aCli)
 
 	os.Exit(m.Run())
 }

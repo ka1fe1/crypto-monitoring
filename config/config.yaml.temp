@@ -57,3 +57,10 @@ general_monitor:
     bot_name: "token"
     interval_seconds: 1000000
     modules: "token_price,polymarket"
+btc_dashboard_monitor:
+    bot_name: "token"
+    interval_seconds: 43200
+    binance_api_url: "https://api.binance.com"
+    okx_api_url: "https://www.okx.com"
+    mempool_api_url: "https://mempool.space"
+    alternative_api_url: "https://api.alternative.me"
