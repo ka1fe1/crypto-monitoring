@@ -45,6 +45,14 @@ token_price_monitor:
         # --- 大宗商品/其他 ---
         "38057": "白银ETF"
         "39250": "美国原油基金"
+    hk_stock_ids: "hk00700,hk03690"
+    hk_stock_names:
+        "hk00700": "腾讯控股"
+        "hk03690": "美团"
+    a_stock_ids: "sh600519,sz000001"
+    a_stock_names:
+        "sh600519": "贵州茅台"
+        "sz000001": "平安银行"
     interval_seconds: 1000000
 dex_pair_alter:
     bot_name: "dex-pair"

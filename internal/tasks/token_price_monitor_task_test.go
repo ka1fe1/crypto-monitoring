@@ -8,6 +8,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/stock"
 )
 
 func TestTokenPriceMonitorTask_Run(t *testing.T) {
@@ -39,7 +40,19 @@ func TestTokenPriceMonitorTask_Run(t *testing.T) {
 	qh := utils.QuietHoursParams{Enabled: false, StartHour: 0, EndHour: 7, Behavior: constant.QUIET_HOURS_BEHAVIOR_PAUSE}
 
 	// Create task with a short interval for testing, though we call run() manually
-	task := NewTokenPriceMonitorTask(tokenSvc, bot, tokenIdsStr, cfg.TokenPriceMonitor.RwaTokenIDs, cfg.TokenPriceMonitor.RwaTokenNames, 60, qh)
+	task := NewTokenPriceMonitorTask(
+		tokenSvc,
+		bot,
+		tokenIdsStr,
+		cfg.TokenPriceMonitor.RwaTokenIDs,
+		cfg.TokenPriceMonitor.RwaTokenNames,
+		cfg.TokenPriceMonitor.HkStockIDs,
+		cfg.TokenPriceMonitor.HkStockNames,
+		cfg.TokenPriceMonitor.AStockIDs,
+		cfg.TokenPriceMonitor.AStockNames,
+		60,
+		qh,
+	)
 
 	// Manually trigger run to test logic and notification
 	// This will call the real API and send a real DingTalk message is configured
@@ -47,7 +60,9 @@ func TestTokenPriceMonitorTask_Run(t *testing.T) {
 }
 
 func TestFormatTokenPricesDetailed_Paxg(t *testing.T) {
-	task := &TokenPriceMonitorTask{}
+	task := &TokenPriceMonitorTask{
+		tokenIds: []string{"1", constant.PAXG_TOKEN_ID},
+	}
 
 	prices := map[string]utils.TokenInfo{
 		"1":                    {Symbol: "BTC", Price: 60000.0, PercentChange1h: 0.5},
@@ -58,11 +73,7 @@ func TestFormatTokenPricesDetailed_Paxg(t *testing.T) {
 		constant.PAXG_TOKEN_ID: {Symbol: "PAXG", Price: 15551.7384, PercentChange1h: -0.1},
 	}
 
-	tokenIds := []string{"1", constant.PAXG_TOKEN_ID}
-	rwaTokenIds := []string{}
-	rwaTokenNames := map[string]string{}
-
-	formatted, _ := task.formatTokenPricesDetailed(prices, cnyPrices, tokenIds, rwaTokenIds, rwaTokenNames)
+	formatted, _ := task.formatTokenPricesDetailed(prices, cnyPrices, nil)
 
 	expectedPaxg := "PAXG**: ***$2150.00*** | ***¥500.00/克*** (-0.10%)"
 
@@ -76,20 +87,18 @@ func TestFormatTokenPricesDetailed_Paxg(t *testing.T) {
 }
 
 func TestFormatTokenPricesDetailed_RWA(t *testing.T) {
-	task := &TokenPriceMonitorTask{}
+	task := &TokenPriceMonitorTask{
+		tokenIds:      []string{"1"},
+		rwaTokenIds:   []string{"12345"},
+		rwaTokenNames: map[string]string{"12345": "ondo代币"},
+	}
 
 	prices := map[string]utils.TokenInfo{
 		"1":     {Symbol: "BTC", Price: 60000.0, PercentChange1h: 0.5},
 		"12345": {Symbol: "ONDO", Price: 1.5, PercentChange1h: 2.3, PercentChange24h: 5.6},
 	}
 
-	tokenIds := []string{"1"}
-	rwaTokenIds := []string{"12345"}
-	rwaTokenNames := map[string]string{
-		"12345": "ondo代币",
-	}
-
-	formatted, _ := task.formatTokenPricesDetailed(prices, nil, tokenIds, rwaTokenIds, rwaTokenNames)
+	formatted, _ := task.formatTokenPricesDetailed(prices, nil, nil)
 
 	if formatted == "" {
 		t.Errorf("Expected formatted string, got empty")
@@ -111,5 +120,34 @@ func TestFormatTokenPricesDetailed_RWA(t *testing.T) {
 
 	if !strings.Contains(formatted, "5.60%") {
 		t.Errorf("Expected RWA token to show 24h change (5.60%%), got: %s", formatted)
+	}
+}
+
+func TestFormatTokenPricesDetailed_Stocks(t *testing.T) {
+	task := &TokenPriceMonitorTask{
+		hkStockIds:   []string{"hk00700"},
+		hkStockNames: map[string]string{"hk00700": "腾讯控股"},
+		aStockIds:    []string{"sh600519"},
+		aStockNames:  map[string]string{"sh600519": "贵州茅台"},
+	}
+
+	stockPrices := map[string]stock.StockInfo{
+		"hk00700":  {Code: "hk00700", Name: "腾讯控股", Price: 370.2, PercentChange: 2.5},
+		"sh600519": {Code: "sh600519", Name: "贵州茅台", Price: 1600.0, PercentChange: 0.45},
+	}
+
+	formatted, _ := task.formatTokenPricesDetailed(nil, nil, stockPrices)
+
+	if !strings.Contains(formatted, "### HK Stocks") {
+		t.Errorf("Expected HK Stocks section, got: %s", formatted)
+	}
+	if !strings.Contains(formatted, "腾讯控股 (00700)") {
+		t.Errorf("Expected HK Stock formatting, got: %s", formatted)
+	}
+	if !strings.Contains(formatted, "### A Shares") {
+		t.Errorf("Expected A Shares section, got: %s", formatted)
+	}
+	if !strings.Contains(formatted, "贵州茅台 (sh600519)") {
+		t.Errorf("Expected A Stock formatting, got: %s", formatted)
 	}
 }

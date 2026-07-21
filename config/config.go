@@ -69,6 +69,12 @@ type TokenPriceMonitorConfig struct {
 	RwaTokenIds     string            `yaml:"rwa_token_ids"`
 	RwaTokenIDs     []string          `yaml:"-"`
 	RwaTokenNames   map[string]string `yaml:"rwa_token_names"`
+	HkStockIds      string            `yaml:"hk_stock_ids"`
+	HkStockIDs      []string          `yaml:"-"`
+	HkStockNames    map[string]string `yaml:"hk_stock_names"`
+	AStockIds       string            `yaml:"a_stock_ids"`
+	AStockIDs       []string          `yaml:"-"`
+	AStockNames     map[string]string `yaml:"a_stock_names"`
 	IntervalSeconds int               `yaml:"interval_seconds"`
 	BotName         string            `yaml:"bot_name"`
 	QuietHours      *QuietHoursConfig `yaml:"quiet_hours"`
@@ -264,9 +270,41 @@ func LoadConfig(path string) (*Config, error) {
 		}
 	}
 
+	// Parse TokenPriceMonitor HkStockIds
+	if cfg.TokenPriceMonitor.HkStockIds != "" {
+		parts := strings.Split(cfg.TokenPriceMonitor.HkStockIds, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.TokenPriceMonitor.HkStockIDs = append(cfg.TokenPriceMonitor.HkStockIDs, trimmed)
+			}
+		}
+	}
+
+	// Parse TokenPriceMonitor AStockIds
+	if cfg.TokenPriceMonitor.AStockIds != "" {
+		parts := strings.Split(cfg.TokenPriceMonitor.AStockIds, ",")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				cfg.TokenPriceMonitor.AStockIDs = append(cfg.TokenPriceMonitor.AStockIDs, trimmed)
+			}
+		}
+	}
+
 	// Initialize RwaTokenNames if nil
 	if cfg.TokenPriceMonitor.RwaTokenNames == nil {
 		cfg.TokenPriceMonitor.RwaTokenNames = make(map[string]string)
+	}
+
+	// Initialize HkStockNames if nil
+	if cfg.TokenPriceMonitor.HkStockNames == nil {
+		cfg.TokenPriceMonitor.HkStockNames = make(map[string]string)
+	}
+
+	// Initialize AStockNames if nil
+	if cfg.TokenPriceMonitor.AStockNames == nil {
+		cfg.TokenPriceMonitor.AStockNames = make(map[string]string)
 	}
 
 	// set keyword equal to bot name

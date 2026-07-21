@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -10,22 +11,40 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/stock"
 )
 
 type TokenPriceMonitorTask struct {
 	tokenService     service.TokenService
+	stockClient      *stock.StockClient
 	dingBot          *dingding.DingBot
 	ticker           *time.Ticker
 	stop             chan bool
 	tokenIds         []string
 	rwaTokenIds      []string
 	rwaTokenNames    map[string]string
+	hkStockIds       []string
+	hkStockNames     map[string]string
+	aStockIds        []string
+	aStockNames      map[string]string
 	interval         time.Duration
 	quietHoursParams utils.QuietHoursParams
 	lastRunTime      time.Time
 }
 
-func NewTokenPriceMonitorTask(tokenService service.TokenService, dingBot *dingding.DingBot, tokenIdsStr string, rwaTokenIds []string, rwaTokenNames map[string]string, intervalSeconds int, quietHoursParams utils.QuietHoursParams) *TokenPriceMonitorTask {
+func NewTokenPriceMonitorTask(
+	tokenService service.TokenService,
+	dingBot *dingding.DingBot,
+	tokenIdsStr string,
+	rwaTokenIds []string,
+	rwaTokenNames map[string]string,
+	hkStockIds []string,
+	hkStockNames map[string]string,
+	aStockIds []string,
+	aStockNames map[string]string,
+	intervalSeconds int,
+	quietHoursParams utils.QuietHoursParams,
+) *TokenPriceMonitorTask {
 	interval := time.Duration(intervalSeconds) * time.Second
 	if interval <= 0 {
 		interval = 60 * time.Second
@@ -43,15 +62,19 @@ func NewTokenPriceMonitorTask(tokenService service.TokenService, dingBot *dingdi
 
 	return &TokenPriceMonitorTask{
 		tokenService:     tokenService,
+		stockClient:      stock.NewStockClient(),
 		dingBot:          dingBot,
 		stop:             make(chan bool),
 		tokenIds:         tokenIds,
 		rwaTokenIds:      rwaTokenIds,
 		rwaTokenNames:    rwaTokenNames,
+		hkStockIds:       hkStockIds,
+		hkStockNames:     hkStockNames,
+		aStockIds:        aStockIds,
+		aStockNames:      aStockNames,
 		interval:         interval,
 		quietHoursParams: quietHoursParams,
 	}
-
 }
 
 func (t *TokenPriceMonitorTask) Start() {
@@ -74,7 +97,7 @@ func (t *TokenPriceMonitorTask) Stop() {
 }
 
 func (t *TokenPriceMonitorTask) run() {
-	if len(t.tokenIds) == 0 && len(t.rwaTokenIds) == 0 {
+	if len(t.tokenIds) == 0 && len(t.rwaTokenIds) == 0 && len(t.hkStockIds) == 0 && len(t.aStockIds) == 0 {
 		return
 	}
 
@@ -87,14 +110,13 @@ func (t *TokenPriceMonitorTask) run() {
 	allTokenIds = append(allTokenIds, t.tokenIds...)
 	allTokenIds = append(allTokenIds, t.rwaTokenIds...)
 
-	prices, err := t.tokenService.GetTokenPrice(allTokenIds)
-	if err != nil {
-		logger.Error("Error fetching token prices: %v", err)
-		return
-	}
-
-	if len(prices) == 0 {
-		return
+	var prices map[string]utils.TokenInfo
+	var err error
+	if len(allTokenIds) > 0 {
+		prices, err = t.tokenService.GetTokenPrice(allTokenIds)
+		if err != nil {
+			logger.Error("Error fetching token prices: %v", err)
+		}
 	}
 
 	var cnyPrices map[string]utils.TokenInfo
@@ -113,7 +135,19 @@ func (t *TokenPriceMonitorTask) run() {
 		}
 	}
 
-	formatted, lastUpdated := t.formatTokenPricesDetailed(prices, cnyPrices, t.tokenIds, t.rwaTokenIds, t.rwaTokenNames)
+	var stockSymbols []string
+	stockSymbols = append(stockSymbols, t.hkStockIds...)
+	stockSymbols = append(stockSymbols, t.aStockIds...)
+
+	var stockPrices map[string]stock.StockInfo
+	if len(stockSymbols) > 0 {
+		stockPrices, err = t.stockClient.GetStockPrices(context.Background(), stockSymbols)
+		if err != nil {
+			logger.Error("Error fetching stock prices: %v", err)
+		}
+	}
+
+	formatted, lastUpdated := t.formatTokenPricesDetailed(prices, cnyPrices, stockPrices)
 
 	if formatted == "" {
 		return
@@ -134,14 +168,18 @@ func (t *TokenPriceMonitorTask) run() {
 }
 
 // formatTokenPricesDetailed returns the format used by TokenPriceMonitorTask
-func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]utils.TokenInfo, cnyPrices map[string]utils.TokenInfo, tokenIds []string, rwaTokenIds []string, rwaTokenNames map[string]string) (string, time.Time) {
+func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(
+	prices map[string]utils.TokenInfo,
+	cnyPrices map[string]utils.TokenInfo,
+	stockPrices map[string]stock.StockInfo,
+) (string, time.Time) {
 	var parts []string
 	var maxUpdated time.Time
 
 	// Format Crypto Assets
-	if len(tokenIds) > 0 {
+	if len(t.tokenIds) > 0 && prices != nil {
 		var cryptoTexts []string
-		for _, tokenId := range tokenIds {
+		for _, tokenId := range t.tokenIds {
 			tokenInfo, ok := prices[tokenId]
 			if !ok {
 				continue
@@ -175,9 +213,9 @@ func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]util
 	}
 
 	// Format RWA Assets
-	if len(rwaTokenIds) > 0 {
+	if len(t.rwaTokenIds) > 0 && prices != nil {
 		var rwaTexts []string
-		for _, tokenId := range rwaTokenIds {
+		for _, tokenId := range t.rwaTokenIds {
 			tokenInfo, ok := prices[tokenId]
 			if !ok {
 				continue
@@ -187,7 +225,7 @@ func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]util
 			}
 
 			displayName := tokenInfo.Symbol
-			if chineseName, exists := rwaTokenNames[tokenId]; exists && chineseName != "" {
+			if chineseName, exists := t.rwaTokenNames[tokenId]; exists && chineseName != "" {
 				displayName = fmt.Sprintf("%s (%s)", tokenInfo.Symbol, chineseName)
 			}
 
@@ -198,6 +236,60 @@ func (t *TokenPriceMonitorTask) formatTokenPricesDetailed(prices map[string]util
 		}
 		if len(rwaTexts) > 0 {
 			parts = append(parts, "### RWA Assets\n"+strings.Join(rwaTexts, "\n---\n"))
+		}
+	}
+
+	// Format HK Stocks
+	if len(t.hkStockIds) > 0 && stockPrices != nil {
+		var hkTexts []string
+		for _, code := range t.hkStockIds {
+			info, ok := stockPrices[code]
+			if !ok {
+				continue
+			}
+			if info.LastUpdated.After(maxUpdated) {
+				maxUpdated = info.LastUpdated
+			}
+
+			displayName := info.Name
+			if customName, exists := t.hkStockNames[code]; exists && customName != "" {
+				displayName = customName
+			}
+
+			text := fmt.Sprintf(
+				"- **%s (%s)**: ***HK$%.2f*** (%.2f%%)",
+				displayName, strings.TrimPrefix(code, "hk"), info.Price, info.PercentChange)
+			hkTexts = append(hkTexts, text)
+		}
+		if len(hkTexts) > 0 {
+			parts = append(parts, "### HK Stocks\n"+strings.Join(hkTexts, "\n---\n"))
+		}
+	}
+
+	// Format A Stocks
+	if len(t.aStockIds) > 0 && stockPrices != nil {
+		var aTexts []string
+		for _, code := range t.aStockIds {
+			info, ok := stockPrices[code]
+			if !ok {
+				continue
+			}
+			if info.LastUpdated.After(maxUpdated) {
+				maxUpdated = info.LastUpdated
+			}
+
+			displayName := info.Name
+			if customName, exists := t.aStockNames[code]; exists && customName != "" {
+				displayName = customName
+			}
+
+			text := fmt.Sprintf(
+				"- **%s (%s)**: ***¥%.2f*** (%.2f%%)",
+				displayName, code, info.Price, info.PercentChange)
+			aTexts = append(aTexts, text)
+		}
+		if len(aTexts) > 0 {
+			parts = append(parts, "### A Shares\n"+strings.Join(aTexts, "\n---\n"))
 		}
 	}
 
