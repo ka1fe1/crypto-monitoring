@@ -1,6 +1,7 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/alter/dingding"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/constant"
 	"github.com/ka1fe1/crypto-monitoring/pkg/utils/polymarket"
+	"github.com/ka1fe1/crypto-monitoring/pkg/utils/stock"
 )
 
 type GeneralMonitorTask struct {
@@ -27,7 +29,12 @@ type GeneralMonitorTask struct {
 	tokenIds          []string
 	rwaTokenIds       []string
 	rwaTokenNames     map[string]string
+	hkStockIds        []string
+	hkStockNames      map[string]string
+	aStockIds         []string
+	aStockNames       map[string]string
 	marketIds         []string
+	stockClient       *stock.StockClient
 }
 
 func NewGeneralMonitorTask(
@@ -38,6 +45,10 @@ func NewGeneralMonitorTask(
 	tokenIds []string,
 	rwaTokenIds []string,
 	rwaTokenNames map[string]string,
+	hkStockIds []string,
+	hkStockNames map[string]string,
+	aStockIds []string,
+	aStockNames map[string]string,
 	marketIds []string,
 	intervalSeconds int,
 	quietHoursParams utils.QuietHoursParams,
@@ -58,7 +69,12 @@ func NewGeneralMonitorTask(
 		tokenIds:          tokenIds,
 		rwaTokenIds:       rwaTokenIds,
 		rwaTokenNames:     rwaTokenNames,
+		hkStockIds:        hkStockIds,
+		hkStockNames:      hkStockNames,
+		aStockIds:         aStockIds,
+		aStockNames:       aStockNames,
 		marketIds:         marketIds,
+		stockClient:       stock.NewStockClient(),
 	}
 }
 
@@ -91,7 +107,7 @@ func (t *GeneralMonitorTask) run() {
 	var lastUpdated time.Time
 
 	// 1. Token Price Module
-	if t.isModuleEnabled("token_price") && (len(t.tokenIds) > 0 || len(t.rwaTokenIds) > 0) {
+	if t.isModuleEnabled("token_price") && (len(t.tokenIds) > 0 || len(t.rwaTokenIds) > 0 || len(t.hkStockIds) > 0 || len(t.aStockIds) > 0) {
 		tokenPart, updated, err := t.getTokenPriceContent()
 		if err == nil && tokenPart != "" {
 			parts = append(parts, tokenPart)
@@ -149,9 +165,13 @@ func (t *GeneralMonitorTask) getTokenPriceContent() (string, time.Time, error) {
 	allTokenIds = append(allTokenIds, t.tokenIds...)
 	allTokenIds = append(allTokenIds, t.rwaTokenIds...)
 
-	prices, err := t.tokenService.GetTokenPrice(allTokenIds)
-	if err != nil {
-		return "", time.Time{}, err
+	var prices map[string]utils.TokenInfo
+	var err error
+	if len(allTokenIds) > 0 {
+		prices, err = t.tokenService.GetTokenPrice(allTokenIds)
+		if err != nil {
+			logger.Error("Error fetching token prices: %v", err)
+		}
 	}
 
 	var cnyPrices map[string]utils.TokenInfo
@@ -170,7 +190,19 @@ func (t *GeneralMonitorTask) getTokenPriceContent() (string, time.Time, error) {
 		}
 	}
 
-	formatted, maxUpdated := t.formatTokenPricesSimple(prices, cnyPrices, t.tokenIds, t.rwaTokenIds, t.rwaTokenNames)
+	var stockSymbols []string
+	stockSymbols = append(stockSymbols, t.hkStockIds...)
+	stockSymbols = append(stockSymbols, t.aStockIds...)
+
+	var stockPrices map[string]stock.StockInfo
+	if len(stockSymbols) > 0 {
+		stockPrices, err = t.stockClient.GetStockPrices(context.Background(), stockSymbols)
+		if err != nil {
+			logger.Error("Error fetching stock prices: %v", err)
+		}
+	}
+
+	formatted, maxUpdated := t.formatTokenPricesSimple(prices, cnyPrices, stockPrices, t.tokenIds, t.rwaTokenIds, t.rwaTokenNames, t.hkStockIds, t.hkStockNames, t.aStockIds, t.aStockNames)
 	if formatted == "" {
 		return "", time.Time{}, nil
 	}
@@ -228,12 +260,23 @@ func (t *GeneralMonitorTask) formatPolymarketMarkets(markets []polymarket.Market
 	return strings.Join(texts, "\n")
 }
 
-func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.TokenInfo, cnyPrices map[string]utils.TokenInfo, tokenIds []string, rwaTokenIds []string, rwaTokenNames map[string]string) (string, time.Time) {
+func (t *GeneralMonitorTask) formatTokenPricesSimple(
+	prices map[string]utils.TokenInfo,
+	cnyPrices map[string]utils.TokenInfo,
+	stockPrices map[string]stock.StockInfo,
+	tokenIds []string,
+	rwaTokenIds []string,
+	rwaTokenNames map[string]string,
+	hkStockIds []string,
+	hkStockNames map[string]string,
+	aStockIds []string,
+	aStockNames map[string]string,
+) (string, time.Time) {
 	var parts []string
 	var maxUpdated time.Time
 
 	// Format Crypto Assets
-	if len(tokenIds) > 0 {
+	if len(tokenIds) > 0 && prices != nil {
 		var cryptoTexts []string
 		for _, tokenId := range tokenIds {
 			tokenInfo, ok := prices[tokenId]
@@ -269,7 +312,7 @@ func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.Tok
 	}
 
 	// Format RWA Assets
-	if len(rwaTokenIds) > 0 {
+	if len(rwaTokenIds) > 0 && prices != nil {
 		var rwaTexts []string
 		for _, tokenId := range rwaTokenIds {
 			tokenInfo, ok := prices[tokenId]
@@ -292,6 +335,60 @@ func (t *GeneralMonitorTask) formatTokenPricesSimple(prices map[string]utils.Tok
 		}
 		if len(rwaTexts) > 0 {
 			parts = append(parts, "#### RWA Assets\n"+strings.Join(rwaTexts, "\n"))
+		}
+	}
+
+	// Format HK Stocks
+	if len(hkStockIds) > 0 && stockPrices != nil {
+		var hkTexts []string
+		for _, code := range hkStockIds {
+			info, ok := stockPrices[code]
+			if !ok {
+				continue
+			}
+			if info.LastUpdated.After(maxUpdated) {
+				maxUpdated = info.LastUpdated
+			}
+
+			displayName := info.Name
+			if overrideName, exists := hkStockNames[code]; exists && overrideName != "" {
+				displayName = overrideName
+			}
+
+			text := fmt.Sprintf(
+				"- **%s**: ***HK$%.2f*** (%.2f%%)",
+				displayName, info.Price, info.PercentChange)
+			hkTexts = append(hkTexts, text)
+		}
+		if len(hkTexts) > 0 {
+			parts = append(parts, "#### HK Stocks\n"+strings.Join(hkTexts, "\n"))
+		}
+	}
+
+	// Format A-Shares
+	if len(aStockIds) > 0 && stockPrices != nil {
+		var aTexts []string
+		for _, code := range aStockIds {
+			info, ok := stockPrices[code]
+			if !ok {
+				continue
+			}
+			if info.LastUpdated.After(maxUpdated) {
+				maxUpdated = info.LastUpdated
+			}
+
+			displayName := info.Name
+			if overrideName, exists := aStockNames[code]; exists && overrideName != "" {
+				displayName = overrideName
+			}
+
+			text := fmt.Sprintf(
+				"- **%s**: ***¥%.2f*** (%.2f%%)",
+				displayName, info.Price, info.PercentChange)
+			aTexts = append(aTexts, text)
+		}
+		if len(aTexts) > 0 {
+			parts = append(parts, "#### A-Shares\n"+strings.Join(aTexts, "\n"))
 		}
 	}
 

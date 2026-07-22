@@ -58,9 +58,9 @@ make run
 
 ### Docker 运行
 
-#### 1. 构建镜像
+#### 1. 构建镜像 (在 Mac 等 ARM 设备上构建适用于 x86_64 云服务器的镜像时，需加上 --platform linux/amd64 参数)
 ```bash
-docker build -t crypto-monitoring:25121702 .
+docker build --platform linux/amd64 -t crypto-monitoring:2607221026 .
 ```
 
 #### 2. 运行容器 (挂载配置文件)
@@ -72,25 +72,25 @@ docker run -d \
   -v ~/docker-app/crypto-monitor/config.yaml:/app/config/config.yaml \
   -v ~/docker-app/crypto-monitor/data:/app/data \
   -p 8080:8080 \
-  tataka1takes2/crypto-monitoring:2603301919
+  tataka1takes2/crypto-monitoring:2607221026
 ```
 
 #### 3. 常用命令
 
 *   **tag**
 ```bash
-docker tag crypto-monitoring:2603031818 tataka1takes2/crypto-monitoring:2603031818
+docker tag crypto-monitoring:2607221026 tataka1takes2/crypto-monitoring:2607221026
 ```
 
 *   **推送**
 ```bash
-docker push tataka1takes2/crypto-monitoring:2603301919
+docker push tataka1takes2/crypto-monitoring:2607221026
 ```
 
 *   **拉取**
 
 ```bash
-docker pull tataka1takes2/crypto-monitoring:2603301919
+docker pull tataka1takes2/crypto-monitoring:2607221026
 ```
 
 *   **删除容器**
@@ -122,7 +122,7 @@ docker logs -f crypto-monitoring
 * **login ec2**
 
 ```bash
-ssh -i ~/Documents/Library/pem/crypto-monitor-2.pem ec2-user@ec2-18-183-249-53.ap-northeast-1.compute.amazonaws.com
+ssh -i ~/Downloads/kaifei/code/pem/crypto-monitor-m1.pem ec2-user@ec2-18-183-249-53.ap-northeast-1.compute.amazonaws.com
 ```
 
 
